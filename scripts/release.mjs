@@ -21,7 +21,7 @@ for (const target of targets) {
   // Phase 1: Build .app + updater artifacts
   try {
     console.log(`📦 Phase 1: Building app bundle for ${target}...`);
-    execSync(`npx tauri build --target ${target} --bundles app`, { stdio: 'inherit' });
+    execSync(`npx tauri build --target ${target} --bundles app --config '{"build":{"beforeBuildCommand":""}}'`, { stdio: 'inherit' });
   } catch (err) {
     console.error(`❌ Error building app for ${target}:`, err.message);
     process.exit(1);
@@ -30,7 +30,7 @@ for (const target of targets) {
   // Phase 2: Build DMG (allowed to fail)
   try {
     console.log(`\n💿 Phase 2: Building DMG for ${target}...`);
-    execSync(`npx tauri build --target ${target} --bundles dmg`, { stdio: 'inherit' });
+    execSync(`npx tauri build --target ${target} --bundles dmg --config '{"build":{"beforeBuildCommand":""}}'`, { stdio: 'inherit' });
     console.log(`✅ DMG created for ${target}`);
   } catch (err) {
     console.warn(`⚠️ DMG creation failed for ${target} (non-fatal): ${err.message}`);

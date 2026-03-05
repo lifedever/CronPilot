@@ -31,8 +31,16 @@ jobs:
           node-version: 20
           cache: pnpm
 
+      - name: Rust compile cache
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+
       - name: Install frontend dependencies
         run: pnpm install
+
+      - name: Build frontend once
+        run: pnpm build
 
       - name: Run tests
         run: cd src-tauri && cargo test

@@ -178,7 +178,7 @@
       font-weight: 700;
       margin-bottom: 8px;
     }
-    .platforms p {
+    .platforms > p {
       color: var(--muted);
       font-size: 15px;
       margin-bottom: 28px;
@@ -227,14 +227,14 @@
     <section class="hero">
       <div class="hero-badge">
         <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-        Open Source &amp; Free
+        <span data-i18n="badge"></span>
       </div>
-      <h1>Manage Crontab<br/><span>Visually</span></h1>
-      <p>A lightweight, beautiful desktop app for managing your local crontab jobs. No Docker, no Node.js server — just install and use.</p>
+      <h1 data-i18n="heroTitle"></h1>
+      <p data-i18n="heroDesc"></p>
       <div class="hero-buttons">
         <a href="https://github.com/lifedever/CronPilot/releases/latest" class="btn btn-primary">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-          Download
+          <span data-i18n="download"></span>
         </a>
         <a href="https://github.com/lifedever/CronPilot" class="btn btn-secondary">
           <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z"/></svg>
@@ -248,55 +248,55 @@
       <div class="features-grid">
         <div class="feature-card">
           <div class="feature-icon">&#128736;</div>
-          <h3>Visual CRUD</h3>
-          <p>Create, edit, delete, and toggle cron jobs with a clean UI. No more <code>crontab -e</code>.</p>
+          <h3 data-i18n="f1Title"></h3>
+          <p data-i18n="f1Desc"></p>
         </div>
         <div class="feature-card">
           <div class="feature-icon">&#128197;</div>
-          <h3>Cron Expression Builder</h3>
-          <p>Quick presets, real-time validation, human-readable description, and next 5 execution previews.</p>
+          <h3 data-i18n="f2Title"></h3>
+          <p data-i18n="f2Desc"></p>
         </div>
         <div class="feature-card">
           <div class="feature-icon">&#9889;</div>
-          <h3>Run &amp; Monitor</h3>
-          <p>Execute any job instantly and see stdout, stderr, exit code, and duration in real time.</p>
+          <h3 data-i18n="f3Title"></h3>
+          <p data-i18n="f3Desc"></p>
         </div>
         <div class="feature-card">
           <div class="feature-icon">&#128260;</div>
-          <h3>Import &amp; Sync</h3>
-          <p>One-click import from existing crontab. Changes sync to system crontab automatically.</p>
+          <h3 data-i18n="f4Title"></h3>
+          <p data-i18n="f4Desc"></p>
         </div>
         <div class="feature-card">
           <div class="feature-icon">&#128737;</div>
-          <h3>Command Validation</h3>
-          <p>Checks if the executable exists and warns about dangerous commands before saving.</p>
+          <h3 data-i18n="f5Title"></h3>
+          <p data-i18n="f5Desc"></p>
         </div>
         <div class="feature-card">
           <div class="feature-icon">&#127760;</div>
-          <h3>Bilingual UI</h3>
-          <p>Full Chinese and English support. Switch languages instantly from the header.</p>
+          <h3 data-i18n="f6Title"></h3>
+          <p data-i18n="f6Desc"></p>
         </div>
         <div class="feature-card">
           <div class="feature-icon">&#127912;</div>
-          <h3>Dark Mode</h3>
-          <p>Light, dark, and system-follow themes. Easy on the eyes at any hour.</p>
+          <h3 data-i18n="f7Title"></h3>
+          <p data-i18n="f7Desc"></p>
         </div>
         <div class="feature-card">
           <div class="feature-icon">&#128640;</div>
-          <h3>Auto Update</h3>
-          <p>Built-in updater checks for new versions on startup. One click to download and install.</p>
+          <h3 data-i18n="f8Title"></h3>
+          <p data-i18n="f8Desc"></p>
         </div>
         <div class="feature-card">
           <div class="feature-icon">&#128202;</div>
-          <h3>Dashboard</h3>
-          <p>Overview of total jobs, active count, recent executions, and failure alerts at a glance.</p>
+          <h3 data-i18n="f9Title"></h3>
+          <p data-i18n="f9Desc"></p>
         </div>
       </div>
     </section>
 
     <!-- Tech Stack -->
     <section class="tech">
-      <h2>Built With</h2>
+      <h2 data-i18n="techTitle"></h2>
       <div class="tech-tags">
         <span class="tech-tag">Tauri v2</span>
         <span class="tech-tag">Rust</span>
@@ -310,13 +310,13 @@
 
     <!-- Platforms -->
     <section class="platforms">
-      <h2>Available Platforms</h2>
-      <p>CronPilot manages the system crontab, currently available for macOS.</p>
+      <h2 data-i18n="platformTitle"></h2>
+      <p data-i18n="platformDesc"></p>
       <div class="platform-cards">
         <div class="platform-card">
           <div class="icon">&#63743;</div>
           <h3>macOS</h3>
-          <p>.dmg installer<br/>Intel &amp; Apple Silicon</p>
+          <p data-i18n="platformMac"></p>
         </div>
       </div>
     </section>
@@ -324,11 +324,94 @@
 
   <footer>
     <div class="container">
-      <p>CronPilot is open source under the MIT License.</p>
-      <p style="margin-top: 4px;">
-        Made with &#10084;&#65039; by <a href="https://github.com/lifedever">lifedever</a>
-      </p>
+      <p data-i18n="footerLicense"></p>
+      <p style="margin-top: 4px;" data-i18n-html="footerMade"></p>
     </div>
   </footer>
+
+  <script>
+    const i18n = {
+      en: {
+        badge: "Open Source & Free",
+        heroTitle: "Manage Crontab<br/><span>Visually</span>",
+        heroDesc: "A lightweight, beautiful desktop app for managing your local crontab jobs. No Docker, no Node.js server — just install and use.",
+        download: "Download",
+        f1Title: "Visual CRUD",
+        f1Desc: "Create, edit, delete, and toggle cron jobs with a clean UI. No more crontab -e.",
+        f2Title: "Cron Expression Builder",
+        f2Desc: "Quick presets, real-time validation, human-readable description, and next 5 execution previews.",
+        f3Title: "Run & Monitor",
+        f3Desc: "Execute any job instantly and see stdout, stderr, exit code, and duration in real time.",
+        f4Title: "Import & Sync",
+        f4Desc: "One-click import from existing crontab. Changes sync to system crontab automatically.",
+        f5Title: "Command Validation",
+        f5Desc: "Checks if the executable exists and warns about dangerous commands before saving.",
+        f6Title: "Bilingual UI",
+        f6Desc: "Full Chinese and English support. Switch languages instantly from the header.",
+        f7Title: "Dark Mode",
+        f7Desc: "Light, dark, and system-follow themes. Easy on the eyes at any hour.",
+        f8Title: "Auto Update",
+        f8Desc: "Built-in updater checks for new versions on startup. One click to download and install.",
+        f9Title: "Dashboard",
+        f9Desc: "Overview of total jobs, active count, recent executions, and failure alerts at a glance.",
+        techTitle: "Built With",
+        platformTitle: "Available Platforms",
+        platformDesc: "CronPilot manages the system crontab, currently available for macOS.",
+        platformMac: ".dmg installer<br/>Intel & Apple Silicon",
+        footerLicense: "CronPilot is open source under the MIT License.",
+        footerMade: 'Made with &#10084;&#65039; by <a href="https://github.com/lifedever">lifedever</a>',
+      },
+      zh: {
+        badge: "开源免费",
+        heroTitle: "可视化管理<br/><span>Crontab</span>",
+        heroDesc: "一款轻量美观的桌面应用，可视化管理本地 crontab 定时任务。无需 Docker、无需 Node.js，安装即用。",
+        download: "下载",
+        f1Title: "可视化管理",
+        f1Desc: "通过简洁的界面创建、编辑、删除和启用/禁用定时任务，告别 crontab -e。",
+        f2Title: "Cron 表达式构建器",
+        f2Desc: "快捷预设、实时校验、人类可读描述，以及未来 5 次执行时间预览。",
+        f3Title: "执行与监控",
+        f3Desc: "一键立即执行任务，实时查看 stdout、stderr、退出码和耗时。",
+        f4Title: "导入与同步",
+        f4Desc: "一键导入现有 crontab 任务，修改自动同步到系统 crontab。",
+        f5Title: "命令校验",
+        f5Desc: "保存前自动检测脚本是否可执行，识别危险命令并警告。",
+        f6Title: "中英双语",
+        f6Desc: "完整支持中文和英文界面，在顶部栏一键切换语言。",
+        f7Title: "深色模式",
+        f7Desc: "浅色、深色和跟随系统三种主题，随时护眼。",
+        f8Title: "自动更新",
+        f8Desc: "内置更新检测，启动时自动检查新版本，一键下载安装。",
+        f9Title: "仪表盘",
+        f9Desc: "一目了然查看任务总数、活跃数量、最近执行记录和失败告警。",
+        techTitle: "技术栈",
+        platformTitle: "支持平台",
+        platformDesc: "CronPilot 管理系统 crontab，目前支持 macOS。",
+        platformMac: ".dmg 安装包<br/>Intel 和 Apple Silicon",
+        footerLicense: "CronPilot 基于 MIT 协议开源。",
+        footerMade: '由 <a href="https://github.com/lifedever">lifedever</a> 用 &#10084;&#65039; 打造',
+      }
+    };
+
+    function applyLang(lang) {
+      const t = i18n[lang] || i18n.en;
+      document.documentElement.lang = lang;
+      document.title = lang === "zh" ? "CronPilot — 可视化 Crontab 管理工具" : "CronPilot — Visual Crontab Manager";
+      document.querySelector('meta[name="description"]').content = t.heroDesc;
+
+      document.querySelectorAll("[data-i18n]").forEach(el => {
+        const key = el.getAttribute("data-i18n");
+        if (t[key] != null) el.innerHTML = t[key];
+      });
+      document.querySelectorAll("[data-i18n-html]").forEach(el => {
+        const key = el.getAttribute("data-i18n-html");
+        if (t[key] != null) el.innerHTML = t[key];
+      });
+    }
+
+    // Detect browser language
+    const isZh = (navigator.language || navigator.userLanguage || "").startsWith("zh");
+    applyLang(isZh ? "zh" : "en");
+  </script>
 </body>
 </html>

@@ -17,19 +17,19 @@
       --emerald: #059669;
       --emerald-bg: #ecfdf5;
       --radius: 10px;
+      --header-bg: rgba(250,250,250,0.85);
     }
-    @media (prefers-color-scheme: dark) {
-      :root {
-        --bg: #0f1117;
-        --card: #1a1d27;
-        --text: #e5e7eb;
-        --muted: #9ca3af;
-        --border: #2d3040;
-        --primary: #3b82f6;
-        --primary-hover: #2563eb;
-        --emerald: #34d399;
-        --emerald-bg: #064e3b22;
-      }
+    html.dark {
+      --bg: #0f1117;
+      --card: #1a1d27;
+      --text: #e5e7eb;
+      --muted: #9ca3af;
+      --border: #2d3040;
+      --primary: #3b82f6;
+      --primary-hover: #2563eb;
+      --emerald: #34d399;
+      --emerald-bg: #064e3b22;
+      --header-bg: rgba(15,17,23,0.85);
     }
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
@@ -41,10 +41,71 @@
     }
     .container { max-width: 860px; margin: 0 auto; padding: 0 24px; }
 
+    /* Top Header */
+    .top-header {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: var(--header-bg);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+    }
+    .top-header .container {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 52px;
+    }
+    .app-brand {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      text-decoration: none;
+      color: var(--text);
+    }
+    .app-brand svg { width: 24px; height: 24px; color: var(--primary); }
+    .app-brand span {
+      font-size: 17px;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+    }
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .switcher-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 34px;
+      height: 34px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--card);
+      color: var(--muted);
+      cursor: pointer;
+      transition: all 0.2s;
+      font-size: 14px;
+    }
+    .switcher-btn:hover {
+      background: var(--border);
+      color: var(--text);
+    }
+    .switcher-btn svg { width: 16px; height: 16px; }
+    .lang-btn {
+      width: auto;
+      padding: 0 10px;
+      font-size: 13px;
+      font-weight: 600;
+      gap: 4px;
+    }
+
     /* Hero */
     .hero {
       text-align: center;
-      padding: 80px 0 48px;
+      padding: 72px 0 48px;
     }
     .hero-badge {
       display: inline-flex;
@@ -222,6 +283,22 @@
   </style>
 </head>
 <body>
+  <!-- Top Header with App Name + Switchers -->
+  <header class="top-header">
+    <div class="container">
+      <a class="app-brand" href="#">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        <span>CronPilot</span>
+      </a>
+      <div class="header-actions">
+        <button class="switcher-btn lang-btn" id="langBtn" onclick="toggleLang()" title="Switch language">EN</button>
+        <button class="switcher-btn" id="themeBtn" onclick="toggleTheme()" title="Toggle theme">
+          <svg id="themeIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+        </button>
+      </div>
+    </div>
+  </header>
+
   <div class="container">
     <!-- Hero -->
     <section class="hero">
@@ -243,7 +320,7 @@
       </div>
     </section>
 
-    <!-- Features -->
+    <!-- Features (6 cards, removed: Bilingual, Dark Mode, Auto Update) -->
     <section class="features">
       <div class="features-grid">
         <div class="feature-card">
@@ -270,21 +347,6 @@
           <div class="feature-icon">&#128737;</div>
           <h3 data-i18n="f5Title"></h3>
           <p data-i18n="f5Desc"></p>
-        </div>
-        <div class="feature-card">
-          <div class="feature-icon">&#127760;</div>
-          <h3 data-i18n="f6Title"></h3>
-          <p data-i18n="f6Desc"></p>
-        </div>
-        <div class="feature-card">
-          <div class="feature-icon">&#127912;</div>
-          <h3 data-i18n="f7Title"></h3>
-          <p data-i18n="f7Desc"></p>
-        </div>
-        <div class="feature-card">
-          <div class="feature-icon">&#128640;</div>
-          <h3 data-i18n="f8Title"></h3>
-          <p data-i18n="f8Desc"></p>
         </div>
         <div class="feature-card">
           <div class="feature-icon">&#128202;</div>
@@ -346,12 +408,6 @@
         f4Desc: "One-click import from existing crontab. Changes sync to system crontab automatically.",
         f5Title: "Command Validation",
         f5Desc: "Checks if the executable exists and warns about dangerous commands before saving.",
-        f6Title: "Bilingual UI",
-        f6Desc: "Full Chinese and English support. Switch languages instantly from the header.",
-        f7Title: "Dark Mode",
-        f7Desc: "Light, dark, and system-follow themes. Easy on the eyes at any hour.",
-        f8Title: "Auto Update",
-        f8Desc: "Built-in updater checks for new versions on startup. One click to download and install.",
         f9Title: "Dashboard",
         f9Desc: "Overview of total jobs, active count, recent executions, and failure alerts at a glance.",
         techTitle: "Built With",
@@ -376,12 +432,6 @@
         f4Desc: "一键导入现有 crontab 任务，修改自动同步到系统 crontab。",
         f5Title: "命令校验",
         f5Desc: "保存前自动检测脚本是否可执行，识别危险命令并警告。",
-        f6Title: "中英双语",
-        f6Desc: "完整支持中文和英文界面，在顶部栏一键切换语言。",
-        f7Title: "深色模式",
-        f7Desc: "浅色、深色和跟随系统三种主题，随时护眼。",
-        f8Title: "自动更新",
-        f8Desc: "内置更新检测，启动时自动检查新版本，一键下载安装。",
         f9Title: "仪表盘",
         f9Desc: "一目了然查看任务总数、活跃数量、最近执行记录和失败告警。",
         techTitle: "技术栈",
@@ -393,7 +443,14 @@
       }
     };
 
+    let currentLang = "en";
+    let currentTheme = "light";
+
+    const sunIcon = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>';
+    const moonIcon = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>';
+
     function applyLang(lang) {
+      currentLang = lang;
       const t = i18n[lang] || i18n.en;
       document.documentElement.lang = lang;
       document.title = lang === "zh" ? "CronPilot — 可视化 Crontab 管理工具" : "CronPilot — Visual Crontab Manager";
@@ -407,11 +464,35 @@
         const key = el.getAttribute("data-i18n-html");
         if (t[key] != null) el.innerHTML = t[key];
       });
+
+      document.getElementById("langBtn").textContent = lang === "zh" ? "中" : "EN";
     }
 
-    // Detect browser language
+    function applyTheme(theme) {
+      currentTheme = theme;
+      if (theme === "dark") {
+        document.documentElement.classList.add("dark");
+      } else {
+        document.documentElement.classList.remove("dark");
+      }
+      document.getElementById("themeBtn").innerHTML = theme === "dark" ? sunIcon : moonIcon;
+    }
+
+    function toggleLang() {
+      applyLang(currentLang === "en" ? "zh" : "en");
+    }
+
+    function toggleTheme() {
+      applyTheme(currentTheme === "light" ? "dark" : "light");
+    }
+
+    // Auto-detect language
     const isZh = (navigator.language || navigator.userLanguage || "").startsWith("zh");
     applyLang(isZh ? "zh" : "en");
+
+    // Auto-detect theme
+    const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+    applyTheme(prefersDark ? "dark" : "light");
   </script>
 </body>
 </html>

@@ -1,12 +1,15 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "sonner";
+import { listen } from "@tauri-apps/api/event";
+import { invoke } from "@tauri-apps/api/core";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { DashboardPage } from "@/pages/DashboardPage";
 import { JobsPage } from "@/pages/JobsPage";
 import { SettingsPage } from "@/pages/SettingsPage";
 import { UpdateToast } from "@/components/UpdateToast";
+import { HowItWorksDialog } from "@/components/HowItWorksDialog";
 import { useAppStore } from "@/store/appStore";
 import { useMenuEvents } from "@/hooks/useMenuEvents";
 import { check } from "@tauri-apps/plugin-updater";
@@ -22,6 +25,31 @@ const queryClient = new QueryClient({
 
 function AppRoutes() {
   useMenuEvents();
+  const [showHowItWorks, setShowHowItWorks] = useState(false);
+
+  useEffect(() => {
+    const unlisteners: (() => void)[] = [];
+
+    const setup = async () => {
+      // First-run: show welcome dialog
+      unlisteners.push(
+        await listen("first-run", () => {
+          setShowHowItWorks(true);
+          invoke("mark_first_run_done").catch(() => {});
+        })
+      );
+
+      // Menu: Help > How It Works
+      unlisteners.push(
+        await listen("menu-how-it-works", () => {
+          setShowHowItWorks(true);
+        })
+      );
+    };
+
+    setup();
+    return () => unlisteners.forEach((u) => u());
+  }, []);
 
   return (
     <>
@@ -33,6 +61,10 @@ function AppRoutes() {
         </Route>
       </Routes>
       <UpdateToast />
+      <HowItWorksDialog
+        open={showHowItWorks}
+        onOpenChange={setShowHowItWorks}
+      />
     </>
   );
 }

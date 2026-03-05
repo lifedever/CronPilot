@@ -75,11 +75,15 @@ pub fn setup_menu(app: &tauri::App) -> Result<(), Box<dyn std::error::Error>> {
         .build()?;
 
     // ── Help menu ──
+    let how_it_works = MenuItemBuilder::with_id("how_it_works", t("How It Works...", "工作原理..."))
+        .build(app)?;
     let github = MenuItemBuilder::with_id("github", t("GitHub Repository", "GitHub 仓库"))
         .build(app)?;
     let report_issue = MenuItemBuilder::with_id("report_issue", t("Report an Issue", "反馈问题"))
         .build(app)?;
     let help_menu = SubmenuBuilder::new(app, t("Help", "帮助"))
+        .item(&how_it_works)
+        .separator()
         .item(&github)
         .item(&report_issue)
         .build()?;
@@ -110,6 +114,9 @@ pub fn setup_menu(app: &tauri::App) -> Result<(), Box<dyn std::error::Error>> {
             }
             "import_backup" => {
                 let _ = app_handle.emit("menu-import-backup", ());
+            }
+            "how_it_works" => {
+                let _ = app_handle.emit("menu-how-it-works", ());
             }
             "github" => {
                 let _ = tauri_plugin_opener::open_url(

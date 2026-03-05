@@ -6,9 +6,11 @@ use tauri::State;
 
 use crate::db::DbState;
 use crate::error::AppError;
+use crate::runner;
 
 const CRONPILOT_BEGIN: &str = "# >>> CronPilot managed - DO NOT EDIT <<<";
 const CRONPILOT_END: &str = "# >>> CronPilot end <<<";
+const CRONPILOT_COMMENTED: &str = "# [CronPilot imported]";
 
 #[derive(Serialize)]
 pub struct ImportResult {
@@ -91,18 +93,26 @@ fn write_system_crontab(content: &str) -> Result<(), AppError> {
     Ok(())
 }
 
-/// Build the CronPilot-managed block from enabled jobs in the database
+/// Build the CronPilot-managed block from enabled jobs in the database.
+/// Each command is wrapped with the runner script for execution logging.
 fn build_managed_block(conn: &Connection) -> Result<String, AppError> {
+    let runner = runner::runner_path();
+    let runner_str = runner.display().to_string();
+
     let mut stmt = conn.prepare(
-        "SELECT cron_expression, command, name FROM jobs WHERE is_enabled = 1 ORDER BY id",
+        "SELECT id, cron_expression, command, name FROM jobs WHERE is_enabled = 1 ORDER BY id",
     )?;
 
     let lines: Vec<String> = stmt
         .query_map([], |row| {
-            let expr: String = row.get(0)?;
-            let cmd: String = row.get(1)?;
-            let name: String = row.get(2)?;
-            Ok(format!("# [{}]\n{} {}", name, expr, cmd))
+            let id: i64 = row.get(0)?;
+            let expr: String = row.get(1)?;
+            let cmd: String = row.get(2)?;
+            let name: String = row.get(3)?;
+            Ok(format!(
+                "# [{}]\n{} {} {} -- {}",
+                name, expr, runner_str, id, cmd
+            ))
         })?
         .filter_map(|r| r.ok())
         .collect();
@@ -141,8 +151,8 @@ pub fn sync_to_crontab(conn: &Connection) -> Result<(), AppError> {
     }
 
     // Extract non-CronPilot lines (preserve user's own crontab entries)
-    // but skip lines that are already managed by CronPilot (in DB)
-    let mut user_lines: Vec<&str> = Vec::new();
+    // Comment out lines that are already managed by CronPilot (instead of deleting)
+    let mut user_lines: Vec<String> = Vec::new();
     let mut inside_block = false;
     for line in current.lines() {
         if line.trim() == CRONPILOT_BEGIN {
@@ -154,14 +164,21 @@ pub fn sync_to_crontab(conn: &Connection) -> Result<(), AppError> {
             continue;
         }
         if !inside_block {
+            // Skip lines already commented by CronPilot or runner-wrapped lines
+            if line.starts_with(CRONPILOT_COMMENTED) {
+                user_lines.push(line.to_string());
+                continue;
+            }
             // Check if this crontab line duplicates a DB-managed job
             if let Some((expr, cmd)) = parse_crontab_line(line) {
                 let is_managed = managed_entries.iter().any(|(e, c)| *e == expr && *c == cmd);
                 if is_managed {
-                    continue; // skip — will appear in managed block
+                    // Comment out the original line instead of deleting
+                    user_lines.push(format!("{} {}", CRONPILOT_COMMENTED, line.trim()));
+                    continue;
                 }
             }
-            user_lines.push(line);
+            user_lines.push(line.to_string());
         }
     }
 

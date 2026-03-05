@@ -14,6 +14,7 @@ import { ReconcileDialog } from "@/components/ReconcileDialog";
 import { useAppStore } from "@/store/appStore";
 import { useMenuEvents } from "@/hooks/useMenuEvents";
 import { check } from "@tauri-apps/plugin-updater";
+import { getVersion } from "@tauri-apps/api/app";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -96,6 +97,11 @@ function AppRoutes() {
 
 function App() {
   const setUpdateAvailable = useAppStore((s) => s.setUpdateAvailable);
+  const setAppVersion = useAppStore((s) => s.setAppVersion);
+
+  useEffect(() => {
+    getVersion().then((v) => setAppVersion(v)).catch(() => {});
+  }, [setAppVersion]);
 
   useEffect(() => {
     const timer = setTimeout(async () => {

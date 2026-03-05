@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 import { emit } from "@tauri-apps/api/event";
 import { cn } from "@/lib/utils";
+import { useAppStore } from "@/store/appStore";
 
 const navItems = [
   { key: "dashboard", path: "/", icon: LayoutDashboard },
@@ -19,6 +20,7 @@ const navItems = [
 export function Sidebar() {
   const { t, i18n } = useTranslation();
   const isZh = i18n.language?.startsWith("zh");
+  const appVersion = useAppStore((s) => s.appVersion);
 
   return (
     <aside className="flex h-full w-[180px] shrink-0 flex-col border-r border-[hsl(var(--sidebar-border))] bg-[hsl(var(--sidebar-bg))]">
@@ -64,7 +66,7 @@ export function Sidebar() {
           {isZh ? "工作原理" : "How It Works"}
         </button>
         <p className="px-2.5 text-[12px] text-[hsl(var(--sidebar-fg))] opacity-40">
-          v1.1.1
+          {appVersion ? `v${appVersion}` : ""}
         </p>
       </div>
     </aside>

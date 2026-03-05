@@ -13,7 +13,7 @@ import { useQueryClient } from "@tanstack/react-query";
 
 export function SettingsPage() {
   const { t, i18n } = useTranslation();
-  const { theme, setTheme, updateAvailable, setUpdateAvailable } = useAppStore();
+  const { theme, setTheme, updateAvailable, setUpdateAvailable, appVersion } = useAppStore();
   const queryClient = useQueryClient();
 
   const isZh = i18n.language?.startsWith("zh");
@@ -273,7 +273,7 @@ export function SettingsPage() {
           <div>
             <p className="text-[14px] font-medium">{t("app.name")}</p>
             <p className="mt-0.5 text-[13px] text-[hsl(var(--muted-foreground))]">
-              v1.1.1 · {isZh ? "本地 Crontab 可视化管理" : "Local crontab visual manager"}
+              {appVersion ? `v${appVersion}` : ""} · {isZh ? "本地 Crontab 可视化管理" : "Local crontab visual manager"}
             </p>
           </div>
           <button

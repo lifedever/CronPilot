@@ -349,12 +349,14 @@
       transition: transform 0.6s cubic-bezier(0.22, 1, 0.36, 1);
     }
     .carousel-slide {
-      min-width: 100%;
-      flex-shrink: 0;
+      flex: 0 0 100%;
+      width: 100%;
+      overflow: hidden;
     }
     .carousel-slide img {
       display: block;
       width: 100%;
+      height: auto;
     }
     .carousel-controls {
       display: flex;

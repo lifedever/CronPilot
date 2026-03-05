@@ -49,9 +49,27 @@ pub fn run() {
                 )
                 .unwrap_or(true);
 
-            // Sync crontab on startup (re-sync to ensure consistency)
-            if let Err(e) = commands::crontab::sync_to_crontab(&conn) {
-                eprintln!("Warning: startup crontab sync failed: {}", e);
+            // Check crontab consistency BEFORE syncing
+            let crontab_diff = commands::crontab::check_crontab_changes(&conn);
+            let needs_user_sync = match &crontab_diff {
+                Ok(diff) => !diff.new_entries.is_empty() || diff.managed_block_outdated,
+                Err(e) => {
+                    eprintln!("CronPilot: crontab check failed: {}", e);
+                    false
+                }
+            };
+
+            if needs_user_sync {
+                // Set conflict lock — blocks all CRUD until user resolves
+                if let Err(e) = commands::crontab::set_conflict_locked(&conn, true) {
+                    eprintln!("CronPilot: failed to set conflict lock: {}", e);
+                }
+            } else {
+                // No discrepancies — clear any stale lock and sync silently
+                let _ = commands::crontab::set_conflict_locked(&conn, false);
+                if let Err(e) = commands::crontab::sync_to_crontab(&conn) {
+                    eprintln!("Warning: startup crontab sync failed: {}", e);
+                }
             }
 
             app.manage(DbState(std::sync::Mutex::new(conn)));
@@ -62,7 +80,7 @@ pub fn run() {
             if is_first_run {
                 let handle = app.handle().clone();
                 std::thread::spawn(move || {
-                    std::thread::sleep(std::time::Duration::from_millis(500));
+                    std::thread::sleep(std::time::Duration::from_millis(1500));
                     let _ = handle.emit("first-run", ());
                 });
             }
@@ -82,7 +100,13 @@ pub fn run() {
             commands::logs::get_job_stats,
             commands::logs::get_dashboard_stats,
             commands::logs::get_recent_logs,
+            commands::logs::clear_logs,
             commands::crontab::import_from_crontab,
+            commands::crontab::check_crontab_sync,
+            commands::crontab::resolve_use_local,
+            commands::crontab::resolve_use_app,
+            commands::crontab::resolve_merge,
+            commands::crontab::resolve_skip,
             commands::jobs::run_job_now,
             commands::jobs::validate_command,
             commands::jobs::export_jobs_to_file,

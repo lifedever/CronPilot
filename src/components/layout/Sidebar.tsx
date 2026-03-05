@@ -1,6 +1,13 @@
 import { useTranslation } from "react-i18next";
 import { NavLink } from "react-router-dom";
-import { LayoutDashboard, Clock, Settings, Timer } from "lucide-react";
+import {
+  LayoutDashboard,
+  Clock,
+  Settings,
+  Timer,
+  HelpCircle,
+} from "lucide-react";
+import { emit } from "@tauri-apps/api/event";
 import { cn } from "@/lib/utils";
 
 const navItems = [
@@ -10,7 +17,8 @@ const navItems = [
 ];
 
 export function Sidebar() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const isZh = i18n.language?.startsWith("zh");
 
   return (
     <aside className="flex h-full w-[180px] shrink-0 flex-col border-r border-[hsl(var(--sidebar-border))] bg-[hsl(var(--sidebar-bg))]">
@@ -47,8 +55,17 @@ export function Sidebar() {
       </nav>
 
       {/* Footer */}
-      <div className="px-4 py-3">
-        <p className="text-[12px] text-[hsl(var(--sidebar-fg))] opacity-40">v1.0.0</p>
+      <div className="space-y-1 px-2 pb-3">
+        <button
+          onClick={() => emit("menu-how-it-works")}
+          className="flex w-full items-center gap-2.5 rounded px-2.5 py-[7px] text-[13px] text-[hsl(var(--sidebar-fg))] transition-colors hover:bg-[hsl(var(--sidebar-hover))] hover:text-[hsl(var(--sidebar-fg-active))]"
+        >
+          <HelpCircle className="h-4 w-4 shrink-0" />
+          {isZh ? "工作原理" : "How It Works"}
+        </button>
+        <p className="px-2.5 text-[12px] text-[hsl(var(--sidebar-fg))] opacity-40">
+          v1.0.1
+        </p>
       </div>
     </aside>
   );

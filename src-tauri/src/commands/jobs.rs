@@ -4,7 +4,7 @@ use std::time::Instant;
 use serde::{Deserialize, Serialize};
 use tauri::State;
 
-use crate::commands::crontab::sync_to_crontab;
+use crate::commands::crontab::{sync_to_crontab, require_no_conflict};
 use crate::db::DbState;
 use crate::error::AppError;
 use crate::models::{CreateJobRequest, ExecutionLog, Job, UpdateJobRequest};
@@ -130,6 +130,7 @@ pub fn list_jobs(db: State<DbState>) -> Result<Vec<Job>, AppError> {
 #[tauri::command]
 pub fn create_job(job: CreateJobRequest, db: State<DbState>) -> Result<Job, AppError> {
     let conn = db.0.lock().map_err(|e| AppError::Internal(e.to_string()))?;
+    require_no_conflict(&conn)?;
     let tags_json = serde_json::to_string(&job.tags).unwrap_or_else(|_| "[]".to_string());
 
     conn.execute(
@@ -177,6 +178,7 @@ pub fn create_job(job: CreateJobRequest, db: State<DbState>) -> Result<Job, AppE
 #[tauri::command]
 pub fn update_job(id: i64, job: UpdateJobRequest, db: State<DbState>) -> Result<Job, AppError> {
     let conn = db.0.lock().map_err(|e| AppError::Internal(e.to_string()))?;
+    require_no_conflict(&conn)?;
 
     // Build dynamic update
     let mut updates = Vec::new();
@@ -258,6 +260,7 @@ pub fn update_job(id: i64, job: UpdateJobRequest, db: State<DbState>) -> Result<
 #[tauri::command]
 pub fn delete_job(id: i64, db: State<DbState>) -> Result<(), AppError> {
     let conn = db.0.lock().map_err(|e| AppError::Internal(e.to_string()))?;
+    require_no_conflict(&conn)?;
     let rows = conn.execute("DELETE FROM jobs WHERE id = ?1", [id])?;
     if rows == 0 {
         return Err(AppError::NotFound(format!("Job {} not found", id)));
@@ -271,6 +274,7 @@ pub fn delete_job(id: i64, db: State<DbState>) -> Result<(), AppError> {
 #[tauri::command]
 pub fn toggle_job(id: i64, db: State<DbState>) -> Result<Job, AppError> {
     let conn = db.0.lock().map_err(|e| AppError::Internal(e.to_string()))?;
+    require_no_conflict(&conn)?;
 
     let rows = conn.execute(
         "UPDATE jobs SET is_enabled = NOT is_enabled, updated_at = datetime('now') WHERE id = ?1",
@@ -357,9 +361,11 @@ pub async fn run_job_now(id: i64, db: State<'_, DbState>) -> Result<ExecutionLog
         conn.last_insert_rowid()
     };
 
-    // 3. Execute the command
+    // 3. Execute the command using user's login shell for full environment
+    let shell = std::env::var("SHELL").unwrap_or_else(|_| "/bin/sh".to_string());
     let start = Instant::now();
-    let output = tokio::process::Command::new("sh")
+    let output = tokio::process::Command::new(&shell)
+        .arg("-l")
         .arg("-c")
         .arg(&command_str)
         .output()
@@ -477,6 +483,7 @@ pub fn import_jobs_from_backup(path: String, db: State<DbState>) -> Result<Impor
         .map_err(|e| AppError::Internal(format!("Invalid backup file: {}", e)))?;
 
     let conn = db.0.lock().map_err(|e| AppError::Internal(e.to_string()))?;
+    require_no_conflict(&conn)?;
 
     let mut imported = 0;
     let mut skipped = 0;

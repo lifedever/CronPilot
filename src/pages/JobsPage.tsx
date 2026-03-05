@@ -20,6 +20,7 @@ import { cn } from "@/lib/utils";
 import { jobsApi } from "@/api/jobs";
 import { useQueryClient } from "@tanstack/react-query";
 import { confirm } from "@tauri-apps/plugin-dialog";
+import { useAppStore } from "@/store/appStore";
 
 type FilterType = "all" | "enabled" | "disabled";
 
@@ -43,6 +44,7 @@ export function JobsPage() {
   const [runLogJobName, setRunLogJobName] = useState("");
   const [runLog, setRunLog] = useState<ExecutionLog | null>(null);
   const [filter, setFilter] = useState<FilterType>("all");
+  const conflictLocked = useAppStore((s) => s.conflictLocked);
 
   // Filter and sort: enabled jobs first, then disabled
   const filteredJobs = useMemo(() => {
@@ -169,7 +171,7 @@ export function JobsPage() {
           <div className="flex items-center gap-1.5">
             <button
               onClick={handleImport}
-              disabled={importing}
+              disabled={importing || conflictLocked}
               className={BTN_SECONDARY}
             >
               {importing ? (
@@ -181,6 +183,7 @@ export function JobsPage() {
             </button>
             <button
               onClick={handleCreate}
+              disabled={conflictLocked}
               className={BTN_PRIMARY}
             >
               <Plus className="h-3 w-3" />
@@ -210,6 +213,7 @@ export function JobsPage() {
             <div className="flex gap-2">
               <button
                 onClick={handleImport}
+                disabled={conflictLocked}
                 className={BTN_SECONDARY}
               >
                 <Download className="h-3 w-3" />
@@ -217,6 +221,7 @@ export function JobsPage() {
               </button>
               <button
                 onClick={handleCreate}
+                disabled={conflictLocked}
                 className={BTN_PRIMARY}
               >
                 <Plus className="h-3 w-3" />
@@ -246,8 +251,10 @@ export function JobsPage() {
                 {/* Toggle */}
                 <button
                   onClick={() => handleToggle(job)}
+                  disabled={conflictLocked}
                   className={cn(
-                    "focus-ring flex h-7 w-7 shrink-0 cursor-pointer items-center justify-center rounded transition-colors",
+                    "focus-ring flex h-7 w-7 shrink-0 items-center justify-center rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed",
+                    !conflictLocked && "cursor-pointer",
                     job.is_enabled
                       ? "text-emerald-600 hover:bg-emerald-50 dark:text-emerald-400 dark:hover:bg-emerald-950/50"
                       : "text-[hsl(var(--muted-foreground))] hover:bg-[hsl(var(--muted))]"
@@ -291,14 +298,16 @@ export function JobsPage() {
                   </button>
                   <button
                     onClick={() => handleEdit(job)}
-                    className="focus-ring inline-flex h-7 w-7 cursor-pointer items-center justify-center rounded text-[hsl(var(--muted-foreground))] transition-colors hover:bg-[hsl(var(--muted))] hover:text-[hsl(var(--foreground))]"
+                    disabled={conflictLocked}
+                    className="focus-ring inline-flex h-7 w-7 cursor-pointer items-center justify-center rounded text-[hsl(var(--muted-foreground))] transition-colors hover:bg-[hsl(var(--muted))] hover:text-[hsl(var(--foreground))] disabled:opacity-50 disabled:cursor-not-allowed"
                     title={tc("actions.edit")}
                   >
                     <Pencil className="h-3.5 w-3.5" />
                   </button>
                   <button
                     onClick={() => handleDelete(job)}
-                    className="focus-ring inline-flex h-7 w-7 cursor-pointer items-center justify-center rounded text-[hsl(var(--muted-foreground))] transition-colors hover:bg-rose-50 hover:text-rose-600 dark:hover:bg-rose-950/50 dark:hover:text-rose-400"
+                    disabled={conflictLocked}
+                    className="focus-ring inline-flex h-7 w-7 cursor-pointer items-center justify-center rounded text-[hsl(var(--muted-foreground))] transition-colors hover:bg-rose-50 hover:text-rose-600 dark:hover:bg-rose-950/50 dark:hover:text-rose-400 disabled:opacity-50 disabled:cursor-not-allowed"
                     title={tc("actions.delete")}
                   >
                     <Trash2 className="h-3.5 w-3.5" />

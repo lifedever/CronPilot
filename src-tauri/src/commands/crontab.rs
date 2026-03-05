@@ -133,6 +133,7 @@ fn build_managed_block(conn: &Connection) -> Result<String, AppError> {
 /// Preserves any user-managed lines outside the CronPilot block.
 pub fn sync_to_crontab(conn: &Connection) -> Result<(), AppError> {
     let current = read_system_crontab();
+    let runner_str = runner::runner_path().display().to_string();
 
     // Collect all job commands from DB to detect duplicates in user section
     let mut managed_entries: Vec<(String, String)> = Vec::new();
@@ -164,16 +165,20 @@ pub fn sync_to_crontab(conn: &Connection) -> Result<(), AppError> {
             continue;
         }
         if !inside_block {
-            // Skip lines already commented by CronPilot or runner-wrapped lines
+            // Skip lines already commented by CronPilot
             if line.starts_with(CRONPILOT_COMMENTED) {
                 user_lines.push(line.to_string());
                 continue;
             }
-            // Check if this crontab line duplicates a DB-managed job
             if let Some((expr, cmd)) = parse_crontab_line(line) {
+                // Runner-wrapped lines outside the block are stale CronPilot entries
+                if cmd.contains(&runner_str) {
+                    user_lines.push(format!("{} {}", CRONPILOT_COMMENTED, line.trim()));
+                    continue;
+                }
+                // Check if this crontab line duplicates a DB-managed job
                 let is_managed = managed_entries.iter().any(|(e, c)| *e == expr && *c == cmd);
                 if is_managed {
-                    // Comment out the original line instead of deleting
                     user_lines.push(format!("{} {}", CRONPILOT_COMMENTED, line.trim()));
                     continue;
                 }
@@ -213,30 +218,10 @@ pub fn sync_to_crontab(conn: &Connection) -> Result<(), AppError> {
     Ok(())
 }
 
-#[tauri::command]
-pub fn import_from_crontab(db: State<DbState>) -> Result<ImportResult, AppError> {
-    let output = Command::new("crontab")
-        .arg("-l")
-        .output()
-        .map_err(|e| AppError::Crontab(format!("Failed to run crontab -l: {}", e)))?;
-
-    if !output.status.success() {
-        let stderr = String::from_utf8_lossy(&output.stderr);
-        if stderr.contains("no crontab") {
-            return Ok(ImportResult {
-                imported: 0,
-                skipped: 0,
-            });
-        }
-        return Err(AppError::Crontab(format!("crontab -l failed: {}", stderr)));
-    }
-
-    let content = String::from_utf8_lossy(&output.stdout);
-    let conn = db
-        .0
-        .lock()
-        .map_err(|e| AppError::Internal(e.to_string()))?;
-
+/// Core import logic: scan crontab for entries not in DB, import them.
+/// Returns (imported, skipped) counts.
+fn import_crontab_entries(conn: &Connection, content: &str) -> Result<(usize, usize), AppError> {
+    let runner_path = runner::runner_path().display().to_string();
     let mut imported = 0;
     let mut skipped = 0;
 
@@ -255,7 +240,18 @@ pub fn import_from_crontab(db: State<DbState>) -> Result<ImportResult, AppError>
             continue;
         }
 
+        // Skip lines already commented by CronPilot
+        if line.starts_with(CRONPILOT_COMMENTED) {
+            continue;
+        }
+
         if let Some((expr, cmd)) = parse_crontab_line(line) {
+            // Skip runner-wrapped commands (these are CronPilot's own entries
+            // that ended up outside the block somehow)
+            if cmd.contains(&runner_path) {
+                continue;
+            }
+
             let exists: bool = conn
                 .query_row(
                     "SELECT COUNT(*) > 0 FROM jobs WHERE command = ?1",
@@ -279,8 +275,315 @@ pub fn import_from_crontab(db: State<DbState>) -> Result<ImportResult, AppError>
         }
     }
 
-    // Sync immediately so the crontab reflects the managed block
-    // and removes duplicates from the user section
+    Ok((imported, skipped))
+}
+
+/// Describes what kind of crontab inconsistency was detected.
+#[derive(Debug, Serialize, Clone)]
+pub struct CrontabDiff {
+    /// New entries in crontab not in DB
+    pub new_entries: Vec<(String, String)>,
+    /// Whether the managed block is missing or outdated
+    pub managed_block_outdated: bool,
+}
+
+/// Check if the system crontab is consistent with the DB.
+/// Detects: new entries not in DB, and managed block mismatch.
+/// Must be called BEFORE sync_to_crontab to see the real state.
+pub fn check_crontab_changes(conn: &Connection) -> Result<CrontabDiff, AppError> {
+    let content = read_system_crontab();
+    if content.is_empty() {
+        // No crontab at all; check if we have jobs that should be there
+        let has_enabled_jobs: bool = conn
+            .query_row(
+                "SELECT COUNT(*) > 0 FROM jobs WHERE is_enabled = 1",
+                [],
+                |row| row.get(0),
+            )
+            .unwrap_or(false);
+
+        return Ok(CrontabDiff {
+            new_entries: Vec::new(),
+            managed_block_outdated: has_enabled_jobs,
+        });
+    }
+
+    let runner_path = runner::runner_path().display().to_string();
+    let mut new_entries: Vec<(String, String)> = Vec::new();
+
+    // 1. Scan for new entries outside the managed block
+    let mut inside_block = false;
+    for line in content.lines() {
+        if line.trim() == CRONPILOT_BEGIN {
+            inside_block = true;
+            continue;
+        }
+        if line.trim() == CRONPILOT_END {
+            inside_block = false;
+            continue;
+        }
+        if inside_block {
+            continue;
+        }
+        if line.starts_with(CRONPILOT_COMMENTED) {
+            continue;
+        }
+
+        if let Some((expr, cmd)) = parse_crontab_line(line) {
+            if cmd.contains(&runner_path) {
+                continue;
+            }
+
+            let exists: bool = conn
+                .query_row(
+                    "SELECT COUNT(*) > 0 FROM jobs WHERE command = ?1",
+                    [&cmd],
+                    |row| row.get(0),
+                )
+                .unwrap_or(false);
+
+            if !exists {
+                new_entries.push((expr, cmd));
+            }
+        }
+    }
+
+    // 2. Check if managed block matches what we'd generate
+    let expected_block = build_managed_block(conn)?;
+    let managed_block_outdated = if expected_block.is_empty() {
+        // No enabled jobs, managed block should be absent
+        content.contains(CRONPILOT_BEGIN)
+    } else {
+        // Extract current managed block from crontab
+        let mut current_block = String::new();
+        let mut in_block = false;
+        for line in content.lines() {
+            if line.trim() == CRONPILOT_BEGIN {
+                in_block = true;
+                current_block.push_str(line);
+                current_block.push('\n');
+                continue;
+            }
+            if line.trim() == CRONPILOT_END {
+                current_block.push_str(line);
+                in_block = false;
+                continue;
+            }
+            if in_block {
+                current_block.push_str(line);
+                current_block.push('\n');
+            }
+        }
+        current_block.trim() != expected_block.trim()
+    };
+
+    Ok(CrontabDiff {
+        new_entries,
+        managed_block_outdated,
+    })
+}
+
+/// Check if the crontab conflict lock is active.
+pub fn is_conflict_locked(conn: &Connection) -> bool {
+    conn.query_row(
+        "SELECT value FROM settings WHERE key = 'conflict_locked'",
+        [],
+        |row| row.get::<_, String>(0),
+    )
+    .map(|v| v == "1")
+    .unwrap_or(false)
+}
+
+/// Set or clear the conflict lock.
+pub fn set_conflict_locked(conn: &Connection, locked: bool) -> Result<(), AppError> {
+    if locked {
+        conn.execute(
+            "INSERT OR REPLACE INTO settings (key, value) VALUES ('conflict_locked', '1')",
+            [],
+        )?;
+    } else {
+        conn.execute("DELETE FROM settings WHERE key = 'conflict_locked'", [])?;
+    }
+    Ok(())
+}
+
+/// Guard: returns ConflictLocked error if there's an unresolved conflict.
+pub fn require_no_conflict(conn: &Connection) -> Result<(), AppError> {
+    if is_conflict_locked(conn) {
+        return Err(AppError::ConflictLocked(
+            "Crontab conflict must be resolved before modifying jobs".to_string(),
+        ));
+    }
+    Ok(())
+}
+
+#[derive(Serialize)]
+pub struct CrontabChangeEntry {
+    pub expression: String,
+    pub command: String,
+}
+
+#[derive(Serialize)]
+pub struct CrontabSyncStatus {
+    pub new_entries: Vec<CrontabChangeEntry>,
+    pub managed_block_outdated: bool,
+    pub needs_sync: bool,
+    pub conflict_locked: bool,
+}
+
+/// Frontend calls this on mount to check conflict state (replaces flaky event timing).
+#[tauri::command]
+pub fn check_crontab_sync(db: State<DbState>) -> Result<CrontabSyncStatus, AppError> {
+    let conn = db
+        .0
+        .lock()
+        .map_err(|e| AppError::Internal(e.to_string()))?;
+
+    let locked = is_conflict_locked(&conn);
+    let diff = check_crontab_changes(&conn)?;
+    let needs_sync = !diff.new_entries.is_empty() || diff.managed_block_outdated;
+    Ok(CrontabSyncStatus {
+        new_entries: diff
+            .new_entries
+            .into_iter()
+            .map(|(expression, command)| CrontabChangeEntry {
+                expression,
+                command,
+            })
+            .collect(),
+        managed_block_outdated: diff.managed_block_outdated,
+        needs_sync,
+        conflict_locked: locked,
+    })
+}
+
+/// Resolve conflict: keep local crontab as source of truth.
+/// Import all new entries from crontab, then overwrite managed block.
+#[tauri::command]
+pub fn resolve_use_local(db: State<DbState>) -> Result<ImportResult, AppError> {
+    let conn = db
+        .0
+        .lock()
+        .map_err(|e| AppError::Internal(e.to_string()))?;
+
+    let content = read_system_crontab();
+
+    // Delete all existing jobs and re-import everything from crontab
+    conn.execute("DELETE FROM jobs", [])?;
+
+    let mut imported = 0;
+    let runner_path = runner::runner_path().display().to_string();
+
+    // Extract lines outside the managed block (the "real" user crontab)
+    let mut inside_block = false;
+    for line in content.lines() {
+        if line.trim() == CRONPILOT_BEGIN {
+            inside_block = true;
+            continue;
+        }
+        if line.trim() == CRONPILOT_END {
+            inside_block = false;
+            continue;
+        }
+        if inside_block {
+            continue;
+        }
+        if line.starts_with(CRONPILOT_COMMENTED) {
+            continue;
+        }
+        if let Some((expr, cmd)) = parse_crontab_line(line) {
+            if cmd.contains(&runner_path) {
+                continue;
+            }
+            let name = name_from_command(&cmd);
+            conn.execute(
+                "INSERT INTO jobs (name, cron_expression, command, description, is_enabled, is_synced)
+                 VALUES (?1, ?2, ?3, '', 1, 0)",
+                rusqlite::params![name, expr, cmd],
+            )?;
+            imported += 1;
+        }
+    }
+
+    // Now sync back (rewrites managed block)
+    sync_to_crontab(&conn)?;
+    set_conflict_locked(&conn, false)?;
+
+    Ok(ImportResult { imported, skipped: 0 })
+}
+
+/// Resolve conflict: keep app (DB) as source of truth.
+/// Overwrite crontab with what the DB says. New crontab entries are ignored.
+#[tauri::command]
+pub fn resolve_use_app(db: State<DbState>) -> Result<(), AppError> {
+    let conn = db
+        .0
+        .lock()
+        .map_err(|e| AppError::Internal(e.to_string()))?;
+
+    sync_to_crontab(&conn)?;
+    set_conflict_locked(&conn, false)?;
+
+    Ok(())
+}
+
+/// Resolve conflict: merge both.
+/// Import new crontab entries into DB, then sync everything back.
+#[tauri::command]
+pub fn resolve_merge(db: State<DbState>) -> Result<ImportResult, AppError> {
+    let conn = db
+        .0
+        .lock()
+        .map_err(|e| AppError::Internal(e.to_string()))?;
+
+    let content = read_system_crontab();
+    let (imported, skipped) = if !content.is_empty() {
+        import_crontab_entries(&conn, &content)?
+    } else {
+        (0, 0)
+    };
+
+    sync_to_crontab(&conn)?;
+    set_conflict_locked(&conn, false)?;
+
+    Ok(ImportResult { imported, skipped })
+}
+
+/// Resolve conflict: skip (do nothing now, keep the lock active).
+#[tauri::command]
+pub fn resolve_skip() -> Result<(), AppError> {
+    // Lock stays — CRUD remains blocked until user resolves
+    Ok(())
+}
+
+#[tauri::command]
+pub fn import_from_crontab(db: State<DbState>) -> Result<ImportResult, AppError> {
+    let conn = db
+        .0
+        .lock()
+        .map_err(|e| AppError::Internal(e.to_string()))?;
+    require_no_conflict(&conn)?;
+
+    let output = Command::new("crontab")
+        .arg("-l")
+        .output()
+        .map_err(|e| AppError::Crontab(format!("Failed to run crontab -l: {}", e)))?;
+
+    if !output.status.success() {
+        let stderr = String::from_utf8_lossy(&output.stderr);
+        if stderr.contains("no crontab") {
+            return Ok(ImportResult {
+                imported: 0,
+                skipped: 0,
+            });
+        }
+        return Err(AppError::Crontab(format!("crontab -l failed: {}", stderr)));
+    }
+
+    let content = String::from_utf8_lossy(&output.stdout);
+
+    let (imported, skipped) = import_crontab_entries(&conn, &content)?;
+
     if imported > 0 {
         sync_to_crontab(&conn)?;
     }

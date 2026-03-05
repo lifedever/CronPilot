@@ -10,6 +10,7 @@ import { JobsPage } from "@/pages/JobsPage";
 import { SettingsPage } from "@/pages/SettingsPage";
 import { UpdateToast } from "@/components/UpdateToast";
 import { HowItWorksDialog } from "@/components/HowItWorksDialog";
+import { ReconcileDialog } from "@/components/ReconcileDialog";
 import { useAppStore } from "@/store/appStore";
 import { useMenuEvents } from "@/hooks/useMenuEvents";
 import { check } from "@tauri-apps/plugin-updater";
@@ -23,9 +24,18 @@ const queryClient = new QueryClient({
   },
 });
 
+interface CrontabSyncStatus {
+  new_entries: { expression: string; command: string }[];
+  managed_block_outdated: boolean;
+  needs_sync: boolean;
+  conflict_locked: boolean;
+}
+
 function AppRoutes() {
   useMenuEvents();
   const [showHowItWorks, setShowHowItWorks] = useState(false);
+  const [showReconcile, setShowReconcile] = useState(false);
+  const setConflictLocked = useAppStore((s) => s.setConflictLocked);
 
   useEffect(() => {
     const unlisteners: (() => void)[] = [];
@@ -45,11 +55,22 @@ function AppRoutes() {
           setShowHowItWorks(true);
         })
       );
+
+      // Check crontab conflict state on mount (replaces flaky backend event)
+      try {
+        const status = await invoke<CrontabSyncStatus>("check_crontab_sync");
+        if (status.conflict_locked || status.needs_sync) {
+          setConflictLocked(true);
+          setShowReconcile(true);
+        }
+      } catch {
+        // Silently ignore
+      }
     };
 
     setup();
     return () => unlisteners.forEach((u) => u());
-  }, []);
+  }, [setConflictLocked]);
 
   return (
     <>
@@ -64,6 +85,10 @@ function AppRoutes() {
       <HowItWorksDialog
         open={showHowItWorks}
         onOpenChange={setShowHowItWorks}
+      />
+      <ReconcileDialog
+        open={showReconcile}
+        onOpenChange={setShowReconcile}
       />
     </>
   );

@@ -10,4 +10,6 @@ export const logsApi = {
     invoke<DashboardStats>("get_dashboard_stats"),
   getRecentLogs: (limit?: number) =>
     invoke<ExecutionLog[]>("get_recent_logs", { limit }),
+  clearLogs: (beforeDays?: number) =>
+    invoke<{ deleted: number }>("clear_logs", { beforeDays }),
 };

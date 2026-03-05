@@ -54,18 +54,22 @@ if [ ! -f "$DB_PATH" ]; then
 fi
 
 STARTED_AT=$(date -u +"%Y-%m-%d %H:%M:%S")
-START_SEC=$(date +%s)
+START_MS=$(python3 -c 'import time; print(int(time.time()*1000))' 2>/dev/null || echo 0)
 
 # Capture output to temp files
-TMPOUT=$(mktemp /tmp/cronpilot.XXXXXX.out)
-TMPERR=$(mktemp /tmp/cronpilot.XXXXXX.err)
+TMPOUT=$(mktemp /tmp/cronpilot_out.XXXXXX)
+TMPERR=$(mktemp /tmp/cronpilot_err.XXXXXX)
 
-# Execute the actual command
+# Execute the command directly (cron env cannot provide login shell context)
 sh -c "$CMD" >"$TMPOUT" 2>"$TMPERR"
 EXIT_CODE=$?
 
-END_SEC=$(date +%s)
-DURATION_MS=$(( (END_SEC - START_SEC) * 1000 ))
+END_MS=$(python3 -c 'import time; print(int(time.time()*1000))' 2>/dev/null || echo 0)
+if [ "$START_MS" -gt 0 ] && [ "$END_MS" -gt 0 ]; then
+    DURATION_MS=$(( END_MS - START_MS ))
+else
+    DURATION_MS=0
+fi
 FINISHED_AT=$(date -u +"%Y-%m-%d %H:%M:%S")
 
 [ $EXIT_CODE -eq 0 ] && STATUS="success" || STATUS="failed"

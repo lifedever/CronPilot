@@ -17,6 +17,9 @@ pub enum AppError {
     #[error("Not found: {0}")]
     NotFound(String),
 
+    #[error("CONFLICT_LOCKED:{0}")]
+    ConflictLocked(String),
+
     #[error("{0}")]
     Internal(String),
 }

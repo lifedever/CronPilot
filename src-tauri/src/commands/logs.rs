@@ -1,3 +1,4 @@
+use serde::Serialize;
 use tauri::State;
 
 use crate::db::DbState;
@@ -129,4 +130,29 @@ pub fn get_recent_logs(
         .collect::<Result<Vec<_>, _>>()?;
 
     Ok(logs)
+}
+
+#[derive(Serialize)]
+pub struct ClearLogsResult {
+    pub deleted: usize,
+}
+
+/// Clear execution logs.
+/// `before_days`: if Some(n), only delete logs older than n days. If None, delete all.
+#[tauri::command]
+pub fn clear_logs(
+    before_days: Option<i64>,
+    db: State<DbState>,
+) -> Result<ClearLogsResult, AppError> {
+    let conn = db.0.lock().map_err(|e| AppError::Internal(e.to_string()))?;
+
+    let deleted = match before_days {
+        Some(days) => conn.execute(
+            "DELETE FROM execution_logs WHERE started_at < datetime('now', ?1)",
+            [format!("-{} days", days)],
+        )?,
+        None => conn.execute("DELETE FROM execution_logs", [])?,
+    };
+
+    Ok(ClearLogsResult { deleted })
 }

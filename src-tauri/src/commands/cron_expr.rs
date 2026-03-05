@@ -1,5 +1,5 @@
 use croner::Cron;
-use chrono::Utc;
+use chrono::{Local, Utc};
 use serde::Serialize;
 
 use crate::error::AppError;
@@ -45,8 +45,9 @@ pub fn get_next_runs(expr: String, count: u32) -> Result<Vec<NextRun>, AppError>
     for next in cron.iter_from(now).take(count as usize) {
         let duration = next - now;
         let relative = format_relative_time(duration);
+        let local_time = next.with_timezone(&Local);
         runs.push(NextRun {
-            datetime: next.format("%Y-%m-%d %H:%M:%S UTC").to_string(),
+            datetime: local_time.format("%Y-%m-%d %H:%M:%S").to_string(),
             relative,
         });
     }
@@ -282,7 +283,8 @@ mod tests {
         let result = get_next_runs("* * * * *".to_string(), 5).unwrap();
         assert_eq!(result.len(), 5);
         for run in &result {
-            assert!(run.datetime.contains("UTC"));
+            // datetime should be in local time format: "YYYY-MM-DD HH:MM:SS"
+            assert!(run.datetime.len() >= 19, "datetime too short: {}", run.datetime);
             assert!(run.relative.starts_with("in "));
         }
     }

@@ -1,7 +1,7 @@
 import { X, CheckCircle2, XCircle, Loader2, Clock, Terminal } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import type { ExecutionLog } from "@/types/job";
-import { cn } from "@/lib/utils";
+import { cn, formatLocalTime } from "@/lib/utils";
 
 interface RunLogDialogProps {
   open: boolean;
@@ -44,11 +44,18 @@ export function RunLogDialog({
             ) : isFailed ? (
               <XCircle className="h-4 w-4 text-rose-500" />
             ) : null}
-            <h2 className="text-[15px] font-semibold">
-              {running
-                ? (isZh ? `正在执行「${jobName}」...` : `Running "${jobName}"...`)
-                : (isZh ? `「${jobName}」执行结果` : `"${jobName}" Result`)}
-            </h2>
+            <div>
+              <h2 className="text-[15px] font-semibold">
+                {running
+                  ? (isZh ? `正在执行「${jobName}」...` : `Running "${jobName}"...`)
+                  : (isZh ? `「${jobName}」执行结果` : `"${jobName}" Result`)}
+              </h2>
+              {!running && log?.started_at && (
+                <p className="text-[12px] text-[hsl(var(--muted-foreground))]">
+                  {formatLocalTime(log.started_at)}
+                </p>
+              )}
+            </div>
           </div>
           {!running && (
             <button

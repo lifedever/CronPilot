@@ -1,6 +1,7 @@
 mod commands;
 mod db;
 mod error;
+mod menu;
 mod models;
 
 use tauri::Manager;
@@ -26,6 +27,8 @@ pub fn run() {
             let db_path = db::get_db_path(&app_data_dir);
             let conn = db::init_db(&db_path).expect("Failed to initialize database");
             app.manage(DbState(std::sync::Mutex::new(conn)));
+
+            menu::setup_menu(app)?;
 
             Ok(())
         })

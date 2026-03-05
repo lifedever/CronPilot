@@ -8,6 +8,7 @@ import { JobsPage } from "@/pages/JobsPage";
 import { SettingsPage } from "@/pages/SettingsPage";
 import { UpdateToast } from "@/components/UpdateToast";
 import { useAppStore } from "@/store/appStore";
+import { useMenuEvents } from "@/hooks/useMenuEvents";
 import { check } from "@tauri-apps/plugin-updater";
 
 const queryClient = new QueryClient({
@@ -19,11 +20,27 @@ const queryClient = new QueryClient({
   },
 });
 
+function AppRoutes() {
+  useMenuEvents();
+
+  return (
+    <>
+      <Routes>
+        <Route element={<AppLayout />}>
+          <Route path="/" element={<DashboardPage />} />
+          <Route path="/jobs" element={<JobsPage />} />
+          <Route path="/settings" element={<SettingsPage />} />
+        </Route>
+      </Routes>
+      <UpdateToast />
+    </>
+  );
+}
+
 function App() {
   const setUpdateAvailable = useAppStore((s) => s.setUpdateAvailable);
 
   useEffect(() => {
-    // Auto-check for updates on startup (delay 3s to not block UI)
     const timer = setTimeout(async () => {
       try {
         const update = await check();
@@ -31,7 +48,7 @@ function App() {
           setUpdateAvailable(update.version);
         }
       } catch {
-        // Silently ignore — user can still check manually
+        // Silently ignore
       }
     }, 3000);
     return () => clearTimeout(timer);
@@ -40,14 +57,7 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
-        <Routes>
-          <Route element={<AppLayout />}>
-            <Route path="/" element={<DashboardPage />} />
-            <Route path="/jobs" element={<JobsPage />} />
-            <Route path="/settings" element={<SettingsPage />} />
-          </Route>
-        </Routes>
-        <UpdateToast />
+        <AppRoutes />
       </BrowserRouter>
       <Toaster
         position="top-center"

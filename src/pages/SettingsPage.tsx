@@ -121,7 +121,7 @@ export function SettingsPage() {
   };
 
   return (
-    <div className="space-y-3">
+    <div className="h-full space-y-3 overflow-auto">
       {/* Language */}
       <div className="rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--card))]">
         <div className="flex items-center justify-between px-4 py-2.5">

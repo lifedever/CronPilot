@@ -13,6 +13,8 @@ import {
   Trash2,
   ChevronDown,
   ChevronsDown,
+  Hand,
+  Timer,
 } from "lucide-react";
 import { cn, parseUTCDate, formatLocalTime } from "@/lib/utils";
 import { RunLogDialog } from "@/components/jobs/RunLogDialog";
@@ -148,7 +150,7 @@ export function DashboardPage() {
   ];
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex h-full min-h-0 flex-col gap-4">
       {/* Stats - fixed height */}
       <div className="shrink-0 grid grid-cols-3 gap-3">
         {cards.map((card) => (
@@ -170,7 +172,7 @@ export function DashboardPage() {
       </div>
 
       {/* Recent Activity - fills remaining height, scrolls internally */}
-      <div className="flex flex-col rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--card))]">
+      <div className="flex min-h-0 shrink flex-col overflow-hidden rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--card))]">
         <div className="flex shrink-0 items-center justify-between border-b border-[hsl(var(--border))] px-4 py-2.5">
           <div className="flex items-center gap-2">
             <Activity className="h-[14px] w-[14px] text-[hsl(var(--muted-foreground))]" />
@@ -217,7 +219,7 @@ export function DashboardPage() {
         </div>
 
         {/* Scrollable log list */}
-        <div className="max-h-[60vh] overflow-auto">
+        <div className="min-h-0 flex-1 overflow-auto">
           {logs.length === 0 ? (
             <div className="flex flex-col items-center gap-2 py-12">
               <CalendarClock className="h-6 w-6 text-[hsl(var(--muted-foreground))] opacity-40" />
@@ -245,6 +247,18 @@ export function DashboardPage() {
                       log.status === "timeout" && "bg-orange-500"
                     )}
                   />
+                  <span
+                    className="shrink-0"
+                    title={log.trigger_type === "manual"
+                      ? (isZh ? "手动执行" : "Manual run")
+                      : (isZh ? "定时自动执行" : "Scheduled (cron)")}
+                  >
+                    {log.trigger_type === "manual" ? (
+                      <Hand className="h-3 w-3 text-violet-500 dark:text-violet-400" />
+                    ) : (
+                      <Timer className="h-3 w-3 text-sky-500 dark:text-sky-400" />
+                    )}
+                  </span>
                   <span className="shrink-0 font-mono text-[12px] text-[hsl(var(--muted-foreground))]">
                     Job#{log.job_id}
                   </span>

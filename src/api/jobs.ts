@@ -7,6 +7,13 @@ export interface CommandValidation {
   warnings: string[];
 }
 
+export interface CronAccessCheck {
+  needs_attention: boolean;
+  protected_paths: string[];
+  cron_has_fda: boolean;
+  safe_dir: string;
+}
+
 export const jobsApi = {
   list: () => invoke<Job[]>("list_jobs"),
   get: (id: number) => invoke<Job>("get_job", { id }),
@@ -23,4 +30,8 @@ export const jobsApi = {
   exportJobsToFile: (path: string) => invoke<number>("export_jobs_to_file", { path }),
   importJobsFromBackup: (path: string) =>
     invoke<{ imported: number; skipped: number }>("import_jobs_from_backup", { path }),
+  checkCronAccess: (command: string) =>
+    invoke<CronAccessCheck>("check_cron_access", { command }),
+  copyScriptToSafeDir: (scriptPath: string) =>
+    invoke<string>("copy_script_to_safe_dir", { scriptPath }),
 };

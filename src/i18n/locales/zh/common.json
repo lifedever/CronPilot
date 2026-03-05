@@ -5,7 +5,8 @@
   "nav": {
     "dashboard": "仪表盘",
     "jobs": "定时任务",
-    "settings": "设置"
+    "settings": "设置",
+    "help": "帮助"
   },
   "actions": {
     "save": "保存",

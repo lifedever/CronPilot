@@ -5,7 +5,8 @@
   "nav": {
     "dashboard": "Dashboard",
     "jobs": "Jobs",
-    "settings": "Settings"
+    "settings": "Settings",
+    "help": "Help"
   },
   "actions": {
     "save": "Save",

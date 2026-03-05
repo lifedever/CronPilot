@@ -4,6 +4,95 @@ use tauri::State;
 use crate::db::DbState;
 use crate::error::AppError;
 use crate::models::{DashboardStats, ExecutionLog, JobStats};
+use crate::runner;
+
+#[derive(Serialize)]
+pub struct PermissionCheck {
+    pub has_issue: bool,
+    pub affected_jobs: Vec<AffectedJob>,
+}
+
+#[derive(Serialize)]
+pub struct AffectedJob {
+    pub job_id: i64,
+    pub job_name: String,
+}
+
+/// Check recent execution logs for "Operation not permitted" errors,
+/// which indicates cron lacks Full Disk Access on macOS.
+#[tauri::command]
+pub fn check_cron_permission(db: State<DbState>) -> Result<PermissionCheck, AppError> {
+    let conn = db.0.lock().map_err(|e| AppError::Internal(e.to_string()))?;
+
+    let mut stmt = conn.prepare(
+        "SELECT DISTINCT e.job_id, j.name
+         FROM execution_logs e
+         JOIN jobs j ON j.id = e.job_id
+         WHERE e.status = 'failed'
+           AND e.stderr LIKE '%Operation not permitted%'
+           AND e.started_at >= datetime('now', '-72 hours')
+         ORDER BY e.started_at DESC",
+    )?;
+
+    let affected: Vec<AffectedJob> = stmt
+        .query_map([], |row| {
+            Ok(AffectedJob {
+                job_id: row.get(0)?,
+                job_name: row.get::<_, String>(1)?,
+            })
+        })?
+        .collect::<Result<Vec<_>, _>>()?;
+
+    Ok(PermissionCheck {
+        has_issue: !affected.is_empty(),
+        affected_jobs: affected,
+    })
+}
+
+/// Fix "Operation not permitted" by clearing macOS extended attributes
+/// (com.apple.provenance / com.apple.quarantine) from runner.sh and
+/// all script files referenced by affected jobs.
+#[tauri::command]
+pub fn fix_cron_permission(db: State<DbState>) -> Result<(), AppError> {
+    // 1. Clear xattr from runner.sh
+    let runner = runner::runner_path();
+    let _ = std::process::Command::new("xattr")
+        .arg("-c")
+        .arg(&runner)
+        .output();
+
+    // 2. Clear xattr from scripts referenced by jobs that had permission errors
+    let conn = db.0.lock().map_err(|e| AppError::Internal(e.to_string()))?;
+    let mut stmt = conn.prepare(
+        "SELECT DISTINCT j.command
+         FROM execution_logs e
+         JOIN jobs j ON j.id = e.job_id
+         WHERE e.status = 'failed'
+           AND e.stderr LIKE '%Operation not permitted%'
+           AND e.started_at >= datetime('now', '-72 hours')",
+    )?;
+
+    let commands: Vec<String> = stmt
+        .query_map([], |row| row.get::<_, String>(0))?
+        .filter_map(|r| r.ok())
+        .collect();
+
+    for cmd in &commands {
+        // Extract the script path (first token, or path after /bin/bash etc.)
+        let tokens: Vec<&str> = cmd.split_whitespace().collect();
+        for token in &tokens {
+            let path = std::path::Path::new(token);
+            if path.is_absolute() && path.exists() {
+                let _ = std::process::Command::new("xattr")
+                    .arg("-c")
+                    .arg(token)
+                    .output();
+            }
+        }
+    }
+
+    Ok(())
+}
 
 #[tauri::command]
 pub fn get_job_logs(
@@ -15,7 +104,7 @@ pub fn get_job_logs(
     let limit = limit.unwrap_or(50);
 
     let mut stmt = conn.prepare(
-        "SELECT id, job_id, started_at, finished_at, exit_code, stdout, stderr, duration_ms, status
+        "SELECT id, job_id, started_at, finished_at, exit_code, stdout, stderr, duration_ms, status, trigger_type
          FROM execution_logs
          WHERE job_id = ?1
          ORDER BY started_at DESC
@@ -35,6 +124,7 @@ pub fn get_job_logs(
                 stderr: row.get(6)?,
                 duration_ms: row.get(7)?,
                 status: row.get(8)?,
+                trigger_type: row.get(9)?,
             })
         })?
         .collect::<Result<Vec<_>, _>>()?;
@@ -105,7 +195,7 @@ pub fn get_recent_logs(
     let limit = limit.unwrap_or(20);
 
     let mut stmt = conn.prepare(
-        "SELECT e.id, e.job_id, j.name, e.started_at, e.finished_at, e.exit_code, e.stdout, e.stderr, e.duration_ms, e.status
+        "SELECT e.id, e.job_id, j.name, e.started_at, e.finished_at, e.exit_code, e.stdout, e.stderr, e.duration_ms, e.status, e.trigger_type
          FROM execution_logs e
          LEFT JOIN jobs j ON j.id = e.job_id
          ORDER BY e.started_at DESC
@@ -125,6 +215,7 @@ pub fn get_recent_logs(
                 stderr: row.get(7)?,
                 duration_ms: row.get(8)?,
                 status: row.get(9)?,
+                trigger_type: row.get(10)?,
             })
         })?
         .collect::<Result<Vec<_>, _>>()?;

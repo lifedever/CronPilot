@@ -59,8 +59,16 @@ START_MS=$(python3 -c 'import time; print(int(time.time()*1000))' 2>/dev/null ||
 TMPOUT=$(mktemp /tmp/cronpilot_out.XXXXXX)
 TMPERR=$(mktemp /tmp/cronpilot_err.XXXXXX)
 
-# Execute the command directly, preserving argument boundaries
-"$@" >"$TMPOUT" 2>"$TMPERR"
+# Execute the command.
+# If $1 is a text script file (not a binary), run via its shebang interpreter
+# to avoid macOS TCC blocking exec() on files in protected folders.
+# Only apply this for actual scripts — skip binaries like /bin/bash.
+if [ -f "$1" ] && [ -r "$1" ] && head -c 2 "$1" | grep -q '^#!'; then
+    INTERP=$(head -1 "$1" | sed -n 's/^#![[:space:]]*\([^ ]*\).*/\1/p')
+    ${{INTERP:-/bin/sh}} "$@" >"$TMPOUT" 2>"$TMPERR"
+else
+    "$@" >"$TMPOUT" 2>"$TMPERR"
+fi
 EXIT_CODE=$?
 
 END_MS=$(python3 -c 'import time; print(int(time.time()*1000))' 2>/dev/null || echo 0)
@@ -83,7 +91,7 @@ STDERR=$(head -c 65536 "$TMPERR" | tr -d '\0' | sed "s/'/''/g")
 rm -f "$TMPOUT" "$TMPERR"
 
 # Write execution log to database (best-effort, don't fail the job)
-sqlite3 "$DB_PATH" "INSERT INTO execution_logs (job_id, started_at, finished_at, exit_code, stdout, stderr, duration_ms, status) VALUES ($JOB_ID, '$STARTED_AT', '$FINISHED_AT', $EXIT_CODE, '$STDOUT', '$STDERR', $DURATION_MS, '$STATUS');" 2>/dev/null || true
+sqlite3 "$DB_PATH" "INSERT INTO execution_logs (job_id, started_at, finished_at, exit_code, stdout, stderr, duration_ms, status, trigger_type) VALUES ($JOB_ID, '$STARTED_AT', '$FINISHED_AT', $EXIT_CODE, '$STDOUT', '$STDERR', $DURATION_MS, '$STATUS', 'cron');" 2>/dev/null || true
 
 exit $EXIT_CODE
 "##
@@ -98,6 +106,13 @@ exit $EXIT_CODE
         .arg(&path)
         .output()
         .map_err(|e| AppError::Io(e))?;
+
+    // Remove macOS extended attributes (provenance/quarantine) so cron can execute the script.
+    // Unsigned apps cause macOS to tag created files, which blocks execution in cron.
+    let _ = std::process::Command::new("xattr")
+        .arg("-c")
+        .arg(&path)
+        .output();
 
     Ok(())
 }

@@ -63,6 +63,10 @@ pub fn init_db(db_path: &PathBuf) -> Result<Connection, AppError> {
                 created_at TEXT NOT NULL DEFAULT (datetime('now'))
             );"
         ),
+        // Migration 2: add trigger_type column to distinguish manual vs cron execution
+        M::up(
+            "ALTER TABLE execution_logs ADD COLUMN trigger_type TEXT NOT NULL DEFAULT 'cron';"
+        ),
     ]);
 
     migrations.to_latest(&mut conn).map_err(|e| {

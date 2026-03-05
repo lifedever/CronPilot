@@ -49,6 +49,7 @@ pub struct ExecutionLog {
     pub stderr: String,
     pub duration_ms: Option<i64>,
     pub status: String,
+    pub trigger_type: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

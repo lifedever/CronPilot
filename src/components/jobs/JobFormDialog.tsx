@@ -1,14 +1,15 @@
 import { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
-import { X, CheckCircle2, AlertCircle, FolderOpen, ExternalLink, TriangleAlert, FileCode, Terminal } from "lucide-react";
+import { X, CheckCircle2, AlertCircle, FolderOpen, ExternalLink, TriangleAlert, FileCode, Terminal, ShieldAlert, Copy } from "lucide-react";
 import { useCreateJob, useUpdateJob } from "@/hooks/useJobs";
 import { cronExprApi } from "@/api/cronExpr";
-import { jobsApi, type CommandValidation } from "@/api/jobs";
+import { jobsApi, type CommandValidation, type CronAccessCheck } from "@/api/jobs";
 import type { Job, CronValidation, NextRun } from "@/types/job";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { open as openFileDialog } from "@tauri-apps/plugin-dialog";
 import { revealItemInDir } from "@tauri-apps/plugin-opener";
+import { invoke } from "@tauri-apps/api/core";
 
 interface JobFormDialogProps {
   open: boolean;
@@ -22,6 +23,7 @@ const PRESETS = [
   { label: "every15Minutes", value: "*/15 * * * *" },
   { label: "every30Minutes", value: "*/30 * * * *" },
   { label: "hourly", value: "0 * * * *" },
+  { label: "every6Hours", value: "0 */6 * * *" },
   { label: "daily", value: "0 0 * * *" },
   { label: "weekly", value: "0 0 * * 1" },
   { label: "monthly", value: "0 0 1 * *" },
@@ -46,9 +48,10 @@ function wrapScript(script: string): string {
 }
 
 export function JobFormDialog({ open, onOpenChange, job }: JobFormDialogProps) {
-  const { t } = useTranslation("jobs");
+  const { t, i18n } = useTranslation("jobs");
   const { t: tc } = useTranslation("cronBuilder");
   const { t: tCommon } = useTranslation();
+  const isZh = i18n.language?.startsWith("zh");
   const createJob = useCreateJob();
   const updateJob = useUpdateJob();
 
@@ -61,6 +64,10 @@ export function JobFormDialog({ open, onOpenChange, job }: JobFormDialogProps) {
   const [cmdValidation, setCmdValidation] = useState<CommandValidation | null>(null);
   const [mode, setMode] = useState<CommandMode>("command");
   const [script, setScript] = useState("");
+  const [permCheck, setPermCheck] = useState<CronAccessCheck | null>(null);
+  const [showPermDialog, setShowPermDialog] = useState(false);
+  const [pendingCommand, setPendingCommand] = useState<string | null>(null);
+  const [copying, setCopying] = useState(false);
 
   useEffect(() => {
     if (job) {
@@ -124,10 +131,8 @@ export function JobFormDialog({ open, onOpenChange, job }: JobFormDialogProps) {
     return () => clearTimeout(timer);
   }, [command, script, mode]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const doSave = async (finalCommand: string) => {
     try {
-      const finalCommand = mode === "script" ? wrapScript(script) : command;
       if (job) {
         await updateJob.mutateAsync({
           id: job.id,
@@ -146,6 +151,68 @@ export function JobFormDialog({ open, onOpenChange, job }: JobFormDialogProps) {
       onOpenChange(false);
     } catch (e) {
       toast.error(String(e));
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const finalCommand = mode === "script" ? wrapScript(script) : command;
+    try {
+      const check = await jobsApi.checkCronAccess(finalCommand);
+      if (check.needs_attention) {
+        setPermCheck(check);
+        setPendingCommand(finalCommand);
+        setShowPermDialog(true);
+        return;
+      }
+    } catch {
+      // If check fails, proceed with save anyway
+    }
+    await doSave(finalCommand);
+  };
+
+  const handleOpenSettings = async () => {
+    try {
+      await invoke("open_fda_settings");
+    } catch {
+      // ignore
+    }
+  };
+
+  const handleCopyToSafe = async () => {
+    if (!permCheck || !pendingCommand) return;
+    setCopying(true);
+    try {
+      let newCommand = pendingCommand;
+      for (const p of permCheck.protected_paths) {
+        const newPath = await jobsApi.copyScriptToSafeDir(p);
+        newCommand = newCommand.replace(p, newPath);
+      }
+      setShowPermDialog(false);
+      setPermCheck(null);
+      // Update the command field in UI
+      if (mode === "script") {
+        // For script mode the command is wrapped, update the underlying script
+        const parsed = parseScriptCommand(newCommand);
+        if (parsed.isScript) {
+          setScript(parsed.script);
+        }
+      } else {
+        setCommand(newCommand);
+      }
+      await doSave(newCommand);
+    } catch (e) {
+      toast.error(String(e));
+    } finally {
+      setCopying(false);
+    }
+  };
+
+  const handleSaveAnyway = async () => {
+    setShowPermDialog(false);
+    setPermCheck(null);
+    if (pendingCommand) {
+      await doSave(pendingCommand);
     }
   };
 
@@ -424,6 +491,92 @@ export function JobFormDialog({ open, onOpenChange, job }: JobFormDialogProps) {
           </div>
         </form>
       </div>
+
+      {/* Permission Check Dialog */}
+      {showPermDialog && permCheck && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center">
+          <div
+            className="absolute inset-0 bg-black/50"
+            onClick={() => { setShowPermDialog(false); setPermCheck(null); }}
+          />
+          <div className="relative w-full max-w-[440px] rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--card))] shadow-xl">
+            <div className="flex items-center gap-2 border-b border-[hsl(var(--border))] px-4 py-3">
+              <ShieldAlert className="h-4 w-4 text-amber-500" />
+              <h3 className="text-[14px] font-semibold">
+                {isZh ? "脚本权限提醒" : "Script Permission Notice"}
+              </h3>
+            </div>
+            <div className="px-4 py-3 space-y-3">
+              <p className="text-[13px] text-[hsl(var(--muted-foreground))]">
+                {isZh
+                  ? "以下脚本位于 macOS 受保护目录，cron 自动执行时可能因缺少「完全磁盘访问权限」而失败："
+                  : "The following scripts are in macOS protected directories. Cron may fail without Full Disk Access:"}
+              </p>
+              <div className="rounded bg-[hsl(var(--secondary))] px-3 py-2">
+                {permCheck.protected_paths.map((p) => (
+                  <p key={p} className="truncate font-mono text-[12px] text-amber-600 dark:text-amber-400">
+                    {p}
+                  </p>
+                ))}
+              </div>
+              <p className="text-[13px] text-[hsl(var(--muted-foreground))]">
+                {isZh
+                  ? "你可以选择："
+                  : "You can:"}
+              </p>
+              <div className="space-y-2">
+                <button
+                  onClick={handleOpenSettings}
+                  className="flex w-full items-center gap-2 rounded-md border border-[hsl(var(--border))] px-3 py-2 text-left transition-colors hover:bg-[hsl(var(--secondary))]"
+                >
+                  <ExternalLink className="h-3.5 w-3.5 shrink-0 text-blue-500" />
+                  <div>
+                    <p className="text-[13px] font-medium">
+                      {isZh ? "去授权 cron 完全磁盘访问权限" : "Grant cron Full Disk Access"}
+                    </p>
+                    <p className="text-[12px] text-[hsl(var(--muted-foreground))]">
+                      {isZh
+                        ? "在系统设置中为 /usr/sbin/cron 授权，授权后执行 sudo pkill cron"
+                        : "Authorize /usr/sbin/cron in System Settings, then run: sudo pkill cron"}
+                    </p>
+                  </div>
+                </button>
+                <button
+                  onClick={handleCopyToSafe}
+                  disabled={copying}
+                  className="flex w-full items-center gap-2 rounded-md border border-[hsl(var(--border))] px-3 py-2 text-left transition-colors hover:bg-[hsl(var(--secondary))] disabled:opacity-50"
+                >
+                  <Copy className="h-3.5 w-3.5 shrink-0 text-emerald-500" />
+                  <div>
+                    <p className="text-[13px] font-medium">
+                      {isZh ? "复制脚本到安全目录" : "Copy script to safe directory"}
+                    </p>
+                    <p className="text-[12px] text-[hsl(var(--muted-foreground))]">
+                      {isZh
+                        ? `复制到 ~/.cronpilot/scripts/ 并自动更新命令路径`
+                        : `Copy to ~/.cronpilot/scripts/ and auto-update command path`}
+                    </p>
+                  </div>
+                </button>
+              </div>
+            </div>
+            <div className="flex items-center justify-end gap-1.5 border-t border-[hsl(var(--border))] px-4 py-2.5">
+              <button
+                onClick={() => { setShowPermDialog(false); setPermCheck(null); }}
+                className="rounded px-3 py-[5px] text-[13px] text-[hsl(var(--muted-foreground))] transition-colors hover:bg-[hsl(var(--secondary))]"
+              >
+                {tCommon("actions.cancel")}
+              </button>
+              <button
+                onClick={handleSaveAnyway}
+                className="rounded px-3 py-[5px] text-[13px] font-medium text-amber-600 transition-colors hover:bg-amber-50 dark:text-amber-400 dark:hover:bg-amber-950/30"
+              >
+                {isZh ? "仍然保存" : "Save Anyway"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

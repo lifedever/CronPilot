@@ -31,6 +31,7 @@
     "every15Minutes": "Every 15 minutes",
     "every30Minutes": "Every 30 minutes",
     "hourly": "Hourly",
+    "every6Hours": "Every 6 hours",
     "daily": "Daily at midnight",
     "weekly": "Weekly on Monday",
     "monthly": "Monthly on the 1st"

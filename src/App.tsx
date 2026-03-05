@@ -8,6 +8,7 @@ import { AppLayout } from "@/components/layout/AppLayout";
 import { DashboardPage } from "@/pages/DashboardPage";
 import { JobsPage } from "@/pages/JobsPage";
 import { SettingsPage } from "@/pages/SettingsPage";
+import { HelpPage } from "@/pages/HelpPage";
 import { UpdateToast } from "@/components/UpdateToast";
 import { HowItWorksDialog } from "@/components/HowItWorksDialog";
 import { ReconcileDialog } from "@/components/ReconcileDialog";
@@ -38,6 +39,7 @@ function AppRoutes() {
   const [showReconcile, setShowReconcile] = useState(false);
   const setConflictLocked = useAppStore((s) => s.setConflictLocked);
 
+
   useEffect(() => {
     const unlisteners: (() => void)[] = [];
 
@@ -67,6 +69,8 @@ function AppRoutes() {
       } catch {
         // Silently ignore
       }
+
+
     };
 
     setup();
@@ -80,6 +84,7 @@ function AppRoutes() {
           <Route path="/" element={<DashboardPage />} />
           <Route path="/jobs" element={<JobsPage />} />
           <Route path="/settings" element={<SettingsPage />} />
+          <Route path="/help" element={<HelpPage />} />
         </Route>
       </Routes>
       <UpdateToast />

@@ -111,6 +111,11 @@ pub fn run() {
             commands::jobs::validate_command,
             commands::jobs::export_jobs_to_file,
             commands::jobs::import_jobs_from_backup,
+            commands::jobs::check_cron_access,
+            commands::jobs::copy_script_to_safe_dir,
+            commands::jobs::open_fda_settings,
+            commands::logs::check_cron_permission,
+            commands::logs::fix_cron_permission,
             commands::settings::mark_first_run_done,
         ])
         .run(tauri::generate_context!())

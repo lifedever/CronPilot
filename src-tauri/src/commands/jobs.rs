@@ -9,6 +9,14 @@ use crate::db::DbState;
 use crate::error::AppError;
 use crate::models::{CreateJobRequest, ExecutionLog, Job, UpdateJobRequest};
 
+/// macOS TCC protected directories that require Full Disk Access for cron
+const PROTECTED_DIRS: &[&str] = &[
+    "/Documents/",
+    "/Desktop/",
+    "/Downloads/",
+    "/Library/",
+];
+
 /// Dangerous command patterns that warrant a warning
 const DANGEROUS_PATTERNS: &[(&str, &str)] = &[
     ("rm -rf /", "Deletes entire filesystem"),
@@ -351,11 +359,11 @@ pub async fn run_job_now(id: i64, db: State<'_, DbState>) -> Result<ExecutionLog
             .map_err(|_| AppError::NotFound(format!("Job {} not found", id)))?
     };
 
-    // 2. Insert a "running" log entry
+    // 2. Insert a "running" log entry (manual trigger)
     let log_id = {
         let conn = db.0.lock().map_err(|e| AppError::Internal(e.to_string()))?;
         conn.execute(
-            "INSERT INTO execution_logs (job_id, started_at, status) VALUES (?1, datetime('now'), 'running')",
+            "INSERT INTO execution_logs (job_id, started_at, status, trigger_type) VALUES (?1, datetime('now'), 'running', 'manual')",
             [id],
         )?;
         conn.last_insert_rowid()
@@ -390,7 +398,7 @@ pub async fn run_job_now(id: i64, db: State<'_, DbState>) -> Result<ExecutionLog
     // 5. Return the completed log
     let conn = db.0.lock().map_err(|e| AppError::Internal(e.to_string()))?;
     let mut stmt = conn.prepare(
-        "SELECT id, job_id, started_at, finished_at, exit_code, stdout, stderr, duration_ms, status FROM execution_logs WHERE id = ?1"
+        "SELECT id, job_id, started_at, finished_at, exit_code, stdout, stderr, duration_ms, status, trigger_type FROM execution_logs WHERE id = ?1"
     )?;
 
     let log = stmt.query_row([log_id], |row| {
@@ -405,6 +413,7 @@ pub async fn run_job_now(id: i64, db: State<'_, DbState>) -> Result<ExecutionLog
             stderr: row.get(6)?,
             duration_ms: row.get(7)?,
             status: row.get(8)?,
+            trigger_type: row.get(9)?,
         })
     })?;
 
@@ -524,6 +533,218 @@ pub fn import_jobs_from_backup(path: String, db: State<DbState>) -> Result<Impor
     }
 
     Ok(ImportBackupResult { imported, skipped })
+}
+
+#[derive(Serialize)]
+pub struct CronAccessCheck {
+    /// Whether the command references scripts in protected directories
+    pub needs_attention: bool,
+    /// The protected file paths found in the command
+    pub protected_paths: Vec<String>,
+    /// Whether cron appears to have Full Disk Access (based on execution history)
+    pub cron_has_fda: bool,
+    /// Suggested safe directory for copying scripts
+    pub safe_dir: String,
+}
+
+/// Extract file paths from a command string
+fn extract_paths(command: &str) -> Vec<String> {
+    let home = std::env::var("HOME").unwrap_or_else(|_| "/Users/unknown".to_string());
+    let mut paths = Vec::new();
+    for token in command.split_whitespace() {
+        // Skip flags
+        if token.starts_with('-') {
+            continue;
+        }
+        // Expand ~ to home
+        let expanded = if token.starts_with('~') {
+            token.replacen('~', &home, 1)
+        } else {
+            token.to_string()
+        };
+        if expanded.starts_with('/') && Path::new(&expanded).extension().is_some() {
+            paths.push(expanded);
+        } else if expanded.starts_with('/') && Path::new(&expanded).exists() {
+            paths.push(expanded);
+        }
+    }
+    paths
+}
+
+/// Check if a path is inside a macOS TCC protected directory
+fn is_protected_path(path: &str) -> bool {
+    let home = std::env::var("HOME").unwrap_or_else(|_| "/Users/unknown".to_string());
+    for dir in PROTECTED_DIRS {
+        let protected = format!("{}{}", home, dir);
+        if path.starts_with(&protected) {
+            return true;
+        }
+    }
+    false
+}
+
+/// Try to read the macOS TCC database to check if /usr/sbin/cron has Full Disk Access.
+/// Returns Some(true/false) if we can read the TCC.db, or None if access is denied.
+fn check_tcc_for_cron_fda() -> Option<bool> {
+    let output = std::process::Command::new("sqlite3")
+        .arg("-readonly")
+        .arg("/Library/Application Support/com.apple.TCC/TCC.db")
+        .arg("SELECT auth_value FROM access WHERE service='kTCCServiceSystemPolicyAllFiles' AND client='/usr/sbin/cron'")
+        .output()
+        .ok()?;
+
+    if !output.status.success() {
+        return None; // Can't read TCC database (no root/FDA)
+    }
+
+    let result = String::from_utf8_lossy(&output.stdout).trim().to_string();
+    if result == "2" {
+        Some(true) // auth_value 2 = allowed
+    } else {
+        Some(false) // empty (no entry) or other value = not granted
+    }
+}
+
+/// Check whether cron can access scripts referenced by a command.
+/// Returns info about protected paths and whether cron has FDA.
+#[tauri::command]
+pub fn check_cron_access(command: String, db: State<DbState>) -> Result<CronAccessCheck, AppError> {
+    let home = std::env::var("HOME").unwrap_or_else(|_| "/Users/unknown".to_string());
+    let safe_dir = format!("{}/.cronpilot/scripts", home);
+
+    let paths = extract_paths(&command);
+    let protected_paths: Vec<String> = paths
+        .into_iter()
+        .filter(|p| is_protected_path(p))
+        .collect();
+
+    if protected_paths.is_empty() {
+        return Ok(CronAccessCheck {
+            needs_attention: false,
+            protected_paths: vec![],
+            cron_has_fda: true,
+            safe_dir,
+        });
+    }
+
+    // Determine if cron has Full Disk Access.
+    //
+    // macOS TCC database cannot be read without root/FDA, so we cannot directly
+    // query cron's permission. Instead we use a conservative + history approach:
+    //
+    // 1. Try reading TCC.db to check cron's FDA status (works if app has FDA)
+    // 2. Fall back to execution history:
+    //    - Recent "Operation not permitted" → definitely no FDA
+    //    - Recent cron successes from protected dirs with NO perm failures → has FDA
+    //    - No relevant history → assume no FDA (warns user, they can "Save Anyway")
+    let conn = db.0.lock().map_err(|e| AppError::Internal(e.to_string()))?;
+
+    // Attempt 1: Direct TCC database query (most reliable if accessible)
+    let cron_has_fda = check_tcc_for_cron_fda().unwrap_or_else(|| {
+        // Attempt 2: History-based inference
+        let has_perm_failures: bool = conn
+            .query_row(
+                "SELECT COUNT(*) > 0 FROM execution_logs e
+                 WHERE e.trigger_type = 'cron'
+                   AND e.status = 'failed'
+                   AND e.stderr LIKE '%Operation not permitted%'
+                   AND e.started_at >= datetime('now', '-7 days')",
+                [],
+                |row| row.get(0),
+            )
+            .unwrap_or(false);
+
+        if has_perm_failures {
+            return false;
+        }
+
+        // Check for recent cron successes from protected dirs
+        let Ok(mut stmt) = conn.prepare(
+            "SELECT j.command FROM execution_logs e
+             JOIN jobs j ON j.id = e.job_id
+             WHERE e.trigger_type = 'cron'
+               AND e.status = 'success'
+               AND e.started_at >= datetime('now', '-7 days')"
+        ) else {
+            return false;
+        };
+        let commands: Vec<String> = stmt
+            .query_map([], |row| row.get::<_, String>(0))
+            .unwrap_or_else(|_| panic!())
+            .filter_map(|r| r.ok())
+            .collect();
+        commands.iter().any(|cmd| {
+            extract_paths(cmd).iter().any(|p| is_protected_path(p))
+        })
+    });
+
+    Ok(CronAccessCheck {
+        needs_attention: !cron_has_fda,
+        protected_paths,
+        cron_has_fda,
+        safe_dir,
+    })
+}
+
+/// Open macOS System Settings → Full Disk Access page.
+/// Uses the `open` CLI directly to bypass Tauri shell plugin URL scope restrictions.
+#[tauri::command]
+pub fn open_fda_settings() -> Result<(), AppError> {
+    // Try macOS 13+ (Ventura) URL first
+    let result = std::process::Command::new("open")
+        .arg("x-apple.systempreferences:com.apple.preference.security?Privacy_AllFiles")
+        .output();
+
+    match result {
+        Ok(o) if o.status.success() => Ok(()),
+        _ => {
+            // Fallback for macOS 14+ (Sonoma)
+            let _ = std::process::Command::new("open")
+                .arg("x-apple.systempreferences:com.apple.settings.PrivacySecurity.extension?Privacy_AllFiles")
+                .output();
+            Ok(())
+        }
+    }
+}
+
+/// Copy a script file to ~/.cronpilot/scripts/ and return the new path.
+#[tauri::command]
+pub fn copy_script_to_safe_dir(script_path: String) -> Result<String, AppError> {
+    let home = std::env::var("HOME").unwrap_or_else(|_| "/Users/unknown".to_string());
+    let safe_dir = Path::new(&home).join(".cronpilot").join("scripts");
+    std::fs::create_dir_all(&safe_dir)?;
+
+    let src = Path::new(&script_path);
+    let filename = src
+        .file_name()
+        .ok_or_else(|| AppError::Internal("Invalid script path".to_string()))?;
+    let dest = safe_dir.join(filename);
+
+    // If file already exists with same name, add suffix
+    let dest = if dest.exists() {
+        let stem = src.file_stem().unwrap_or_default().to_string_lossy();
+        let ext = src.extension().map(|e| format!(".{}", e.to_string_lossy())).unwrap_or_default();
+        let ts = chrono::Local::now().format("%Y%m%d%H%M%S");
+        safe_dir.join(format!("{}-{}{}", stem, ts, ext))
+    } else {
+        dest
+    };
+
+    std::fs::copy(&src, &dest)?;
+
+    // Make executable
+    let _ = std::process::Command::new("chmod")
+        .arg("+x")
+        .arg(&dest)
+        .output();
+
+    // Clear xattr
+    let _ = std::process::Command::new("xattr")
+        .arg("-c")
+        .arg(&dest)
+        .output();
+
+    Ok(dest.display().to_string())
 }
 
 #[cfg(test)]

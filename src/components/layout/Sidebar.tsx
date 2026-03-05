@@ -6,6 +6,7 @@ import {
   Settings,
   Timer,
   HelpCircle,
+  Lightbulb,
 } from "lucide-react";
 import { emit } from "@tauri-apps/api/event";
 import { cn } from "@/lib/utils";
@@ -57,15 +58,29 @@ export function Sidebar() {
       </nav>
 
       {/* Footer */}
-      <div className="space-y-1 px-2 pb-3">
+      <div className="space-y-0.5 px-2 pb-3">
+        <NavLink
+          to="/help"
+          className={({ isActive }) =>
+            cn(
+              "flex w-full items-center gap-2.5 rounded px-2.5 py-[7px] text-[13px] transition-colors",
+              isActive
+                ? "bg-[hsl(var(--sidebar-hover))] text-[hsl(var(--sidebar-fg-active))]"
+                : "text-[hsl(var(--sidebar-fg))] hover:bg-[hsl(var(--sidebar-hover))] hover:text-[hsl(var(--sidebar-fg-active))]"
+            )
+          }
+        >
+          <HelpCircle className="h-4 w-4 shrink-0" />
+          {t("nav.help")}
+        </NavLink>
         <button
           onClick={() => emit("menu-how-it-works")}
           className="flex w-full items-center gap-2.5 rounded px-2.5 py-[7px] text-[13px] text-[hsl(var(--sidebar-fg))] transition-colors hover:bg-[hsl(var(--sidebar-hover))] hover:text-[hsl(var(--sidebar-fg-active))]"
         >
-          <HelpCircle className="h-4 w-4 shrink-0" />
+          <Lightbulb className="h-4 w-4 shrink-0" />
           {isZh ? "工作原理" : "How It Works"}
         </button>
-        <p className="px-2.5 text-[12px] text-[hsl(var(--sidebar-fg))] opacity-40">
+        <p className="px-2.5 pt-1 text-[12px] text-[hsl(var(--sidebar-fg))] opacity-40">
           {appVersion ? `v${appVersion}` : ""}
         </p>
       </div>

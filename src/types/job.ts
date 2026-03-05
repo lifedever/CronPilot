@@ -51,6 +51,7 @@ export interface ExecutionLog {
   stderr: string;
   duration_ms: number | null;
   status: "running" | "success" | "failed" | "timeout";
+  trigger_type: "manual" | "cron";
 }
 
 export interface JobStats {

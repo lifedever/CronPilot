@@ -5,12 +5,14 @@ interface AppState {
   theme: "light" | "dark" | "system";
   updateAvailable: string | null;
   conflictLocked: boolean;
+
   appVersion: string;
   setSidebarOpen: (open: boolean) => void;
   toggleSidebar: () => void;
   setTheme: (theme: "light" | "dark" | "system") => void;
   setUpdateAvailable: (version: string | null) => void;
   setConflictLocked: (locked: boolean) => void;
+
   setAppVersion: (version: string) => void;
 }
 
@@ -20,6 +22,7 @@ export const useAppStore = create<AppState>((set) => ({
   updateAvailable: null,
   appVersion: "",
   conflictLocked: false,
+
   setSidebarOpen: (open) => set({ sidebarOpen: open }),
   toggleSidebar: () => set((state) => ({ sidebarOpen: !state.sidebarOpen })),
   setTheme: (theme) => {
@@ -28,5 +31,6 @@ export const useAppStore = create<AppState>((set) => ({
   },
   setUpdateAvailable: (version) => set({ updateAvailable: version }),
   setConflictLocked: (locked) => set({ conflictLocked: locked }),
+
   setAppVersion: (version) => set({ appVersion: version }),
 }));

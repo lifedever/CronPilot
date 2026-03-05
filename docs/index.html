@@ -5,143 +5,289 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>CronPilot — Visual Crontab Manager</title>
   <meta name="description" content="A beautiful desktop app for managing your local crontab. No Docker, no Node.js — just install and use." />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300..700;1,9..40,300..700&family=Outfit:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
   <style>
     :root {
-      --bg: #fafafa;
-      --card: #fff;
-      --text: #1a1a1a;
-      --muted: #6b7280;
-      --border: #e5e7eb;
-      --primary: #2563eb;
-      --primary-hover: #1d4ed8;
-      --emerald: #059669;
-      --emerald-bg: #ecfdf5;
-      --radius: 10px;
-      --header-bg: rgba(250,250,250,0.85);
+      --bg: #fcfcfd;
+      --bg-subtle: #f4f5f7;
+      --card: #ffffff;
+      --card-hover: #f9fafb;
+      --text: #0f172a;
+      --text-secondary: #334155;
+      --muted: #64748b;
+      --border: rgba(15,23,42,0.08);
+      --border-strong: rgba(15,23,42,0.12);
+      --accent: #f59e0b;
+      --accent-soft: rgba(245,158,11,0.1);
+      --accent-glow: rgba(245,158,11,0.15);
+      --primary: #1e40af;
+      --primary-soft: rgba(30,64,175,0.08);
+      --header-bg: rgba(252,252,253,0.82);
+      --shadow-sm: 0 1px 3px rgba(15,23,42,0.04), 0 1px 2px rgba(15,23,42,0.06);
+      --shadow-md: 0 4px 16px rgba(15,23,42,0.06), 0 1px 3px rgba(15,23,42,0.08);
+      --shadow-lg: 0 12px 40px rgba(15,23,42,0.08), 0 4px 12px rgba(15,23,42,0.04);
+      --shadow-screenshot: 0 24px 80px rgba(15,23,42,0.12), 0 8px 24px rgba(15,23,42,0.06);
+      --gradient-hero: radial-gradient(ellipse 80% 50% at 50% -20%, rgba(245,158,11,0.06), transparent),
+                        radial-gradient(ellipse 60% 40% at 80% 20%, rgba(30,64,175,0.04), transparent);
+      --orb-1: rgba(245,158,11,0.07);
+      --orb-2: rgba(30,64,175,0.05);
+      --orb-3: rgba(16,185,129,0.04);
+      --glass: rgba(255,255,255,0.6);
+      --glass-border: rgba(255,255,255,0.8);
     }
     html.dark {
-      --bg: #0f1117;
-      --card: #1a1d27;
-      --text: #e5e7eb;
-      --muted: #9ca3af;
-      --border: #2d3040;
-      --primary: #3b82f6;
-      --primary-hover: #2563eb;
-      --emerald: #34d399;
-      --emerald-bg: #064e3b22;
-      --header-bg: rgba(15,17,23,0.85);
+      --bg: #0b0e14;
+      --bg-subtle: #111520;
+      --card: #151921;
+      --card-hover: #1a1f2b;
+      --text: #f1f5f9;
+      --text-secondary: #cbd5e1;
+      --muted: #7c8aa0;
+      --border: rgba(255,255,255,0.06);
+      --border-strong: rgba(255,255,255,0.1);
+      --accent: #fbbf24;
+      --accent-soft: rgba(251,191,36,0.1);
+      --accent-glow: rgba(251,191,36,0.08);
+      --primary: #60a5fa;
+      --primary-soft: rgba(96,165,250,0.1);
+      --header-bg: rgba(11,14,20,0.8);
+      --shadow-sm: 0 1px 3px rgba(0,0,0,0.2);
+      --shadow-md: 0 4px 16px rgba(0,0,0,0.3);
+      --shadow-lg: 0 12px 40px rgba(0,0,0,0.4);
+      --shadow-screenshot: 0 24px 80px rgba(0,0,0,0.5), 0 8px 24px rgba(0,0,0,0.3);
+      --gradient-hero: radial-gradient(ellipse 80% 50% at 50% -20%, rgba(251,191,36,0.06), transparent),
+                        radial-gradient(ellipse 60% 40% at 80% 20%, rgba(96,165,250,0.04), transparent);
+      --orb-1: rgba(251,191,36,0.05);
+      --orb-2: rgba(96,165,250,0.04);
+      --orb-3: rgba(52,211,153,0.03);
+      --glass: rgba(21,25,33,0.6);
+      --glass-border: rgba(255,255,255,0.06);
     }
+
     * { margin: 0; padding: 0; box-sizing: border-box; }
+
     body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif;
       background: var(--bg);
       color: var(--text);
       line-height: 1.6;
       -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      overflow-x: hidden;
     }
-    .container { max-width: 860px; margin: 0 auto; padding: 0 24px; }
 
-    /* Top Header */
+    .container { max-width: 1080px; margin: 0 auto; padding: 0 28px; }
+
+    /* ---- Animations ---- */
+    @keyframes float-orb {
+      0%, 100% { transform: translate(0, 0) scale(1); }
+      33% { transform: translate(30px, -20px) scale(1.05); }
+      66% { transform: translate(-20px, 15px) scale(0.97); }
+    }
+    @keyframes fade-up {
+      from { opacity: 0; transform: translateY(28px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes fade-in {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+    @keyframes subtle-pulse {
+      0%, 100% { opacity: 0.6; }
+      50% { opacity: 1; }
+    }
+    @keyframes rotate-slow {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+
+    .reveal {
+      opacity: 0;
+      animation: fade-up 0.7s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+    }
+    .reveal-d1 { animation-delay: 0.08s; }
+    .reveal-d2 { animation-delay: 0.16s; }
+    .reveal-d3 { animation-delay: 0.24s; }
+    .reveal-d4 { animation-delay: 0.32s; }
+    .reveal-d5 { animation-delay: 0.40s; }
+    .reveal-d6 { animation-delay: 0.48s; }
+    .reveal-d7 { animation-delay: 0.56s; }
+    .reveal-d8 { animation-delay: 0.64s; }
+
+    /* ---- Top Header ---- */
     .top-header {
       position: sticky;
       top: 0;
       z-index: 100;
       background: var(--header-bg);
-      backdrop-filter: blur(12px);
-      -webkit-backdrop-filter: blur(12px);
+      backdrop-filter: blur(20px) saturate(1.4);
+      -webkit-backdrop-filter: blur(20px) saturate(1.4);
       border-bottom: 1px solid var(--border);
     }
     .top-header .container {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      height: 52px;
+      height: 56px;
     }
     .app-brand {
       display: flex;
       align-items: center;
-      gap: 8px;
+      gap: 10px;
       text-decoration: none;
       color: var(--text);
     }
-    .app-brand svg { width: 24px; height: 24px; color: var(--primary); }
+    .app-brand-icon {
+      width: 28px;
+      height: 28px;
+      background: linear-gradient(135deg, var(--accent), #d97706);
+      border-radius: 7px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+      box-shadow: 0 2px 8px rgba(245,158,11,0.25);
+    }
+    .app-brand-icon svg { width: 16px; height: 16px; }
     .app-brand span {
-      font-size: 17px;
-      font-weight: 800;
+      font-family: 'Outfit', sans-serif;
+      font-size: 18px;
+      font-weight: 700;
       letter-spacing: -0.5px;
     }
     .header-actions {
       display: flex;
       align-items: center;
-      gap: 4px;
+      gap: 6px;
     }
     .switcher-btn {
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      width: 34px;
-      height: 34px;
-      border-radius: 8px;
-      border: 1px solid var(--border);
+      width: 36px;
+      height: 36px;
+      border-radius: 9px;
+      border: 1px solid var(--border-strong);
       background: var(--card);
       color: var(--muted);
       cursor: pointer;
-      transition: all 0.2s;
-      font-size: 14px;
+      transition: all 0.25s cubic-bezier(0.22, 1, 0.36, 1);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 13px;
     }
     .switcher-btn:hover {
-      background: var(--border);
+      background: var(--card-hover);
       color: var(--text);
+      border-color: var(--border-strong);
+      box-shadow: var(--shadow-sm);
+      transform: translateY(-1px);
     }
     .switcher-btn svg { width: 16px; height: 16px; }
     .lang-btn {
       width: auto;
-      padding: 0 10px;
+      padding: 0 12px;
       font-size: 13px;
       font-weight: 600;
-      gap: 4px;
     }
 
-    /* Hero */
+    /* ---- Hero ---- */
+    .hero-wrapper {
+      position: relative;
+      overflow: hidden;
+    }
+    .hero-bg {
+      position: absolute;
+      inset: 0;
+      background: var(--gradient-hero);
+      pointer-events: none;
+    }
+    .hero-orbs {
+      position: absolute;
+      inset: -100px;
+      pointer-events: none;
+      z-index: 0;
+    }
+    .hero-orb {
+      position: absolute;
+      border-radius: 50%;
+      filter: blur(80px);
+    }
+    .hero-orb-1 {
+      width: 500px;
+      height: 500px;
+      background: var(--orb-1);
+      top: -120px;
+      left: -100px;
+      animation: float-orb 18s ease-in-out infinite;
+    }
+    .hero-orb-2 {
+      width: 400px;
+      height: 400px;
+      background: var(--orb-2);
+      top: -50px;
+      right: -80px;
+      animation: float-orb 22s ease-in-out infinite reverse;
+    }
+    .hero-orb-3 {
+      width: 300px;
+      height: 300px;
+      background: var(--orb-3);
+      bottom: -60px;
+      left: 30%;
+      animation: float-orb 20s ease-in-out infinite 3s;
+    }
     .hero {
+      position: relative;
+      z-index: 1;
       text-align: center;
-      padding: 72px 0 48px;
+      padding: 80px 0 56px;
     }
     .hero-badge {
       display: inline-flex;
       align-items: center;
-      gap: 6px;
-      background: var(--emerald-bg);
-      color: var(--emerald);
+      gap: 8px;
+      background: var(--accent-soft);
+      color: var(--accent);
       font-size: 13px;
       font-weight: 600;
-      padding: 4px 14px;
+      padding: 6px 18px;
       border-radius: 999px;
-      margin-bottom: 24px;
+      margin-bottom: 28px;
+      border: 1px solid var(--accent-glow);
     }
+    .hero-badge svg { animation: subtle-pulse 3s ease-in-out infinite; }
     .hero h1 {
-      font-size: 48px;
+      font-family: 'Outfit', sans-serif;
+      font-size: 64px;
       font-weight: 800;
-      letter-spacing: -1.5px;
-      line-height: 1.1;
-      margin-bottom: 16px;
+      letter-spacing: -2.5px;
+      line-height: 1.05;
+      margin-bottom: 20px;
+      background: linear-gradient(135deg, var(--text) 0%, var(--text-secondary) 50%, var(--accent) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
     }
-    .hero h1 span { color: var(--primary); }
     .hero-tagline {
-      font-size: 22px;
-      font-weight: 500;
-      color: var(--muted);
-      margin-bottom: 8px;
+      font-family: 'Outfit', sans-serif;
+      font-size: 24px;
+      font-weight: 400;
+      color: var(--text-secondary);
+      margin-bottom: 12px;
+      letter-spacing: -0.3px;
     }
-    .hero p {
-      font-size: 18px;
+    .hero-desc {
+      font-size: 16px;
       color: var(--muted);
-      max-width: 520px;
-      margin: 0 auto 36px;
+      max-width: 560px;
+      margin: 0 auto 40px;
+      line-height: 1.7;
     }
     .hero-buttons {
       display: flex;
-      gap: 12px;
+      gap: 14px;
       justify-content: center;
       flex-wrap: wrap;
     }
@@ -149,179 +295,368 @@
       display: inline-flex;
       align-items: center;
       gap: 8px;
-      padding: 12px 28px;
-      border-radius: var(--radius);
+      padding: 13px 30px;
+      border-radius: 12px;
+      font-family: 'DM Sans', sans-serif;
       font-size: 15px;
       font-weight: 600;
       text-decoration: none;
-      transition: all 0.2s;
+      transition: all 0.3s cubic-bezier(0.22, 1, 0.36, 1);
       border: 1px solid transparent;
+      cursor: pointer;
     }
+    .btn svg { width: 18px; height: 18px; }
     .btn-primary {
-      background: var(--primary);
+      background: linear-gradient(135deg, var(--accent), #d97706);
       color: #fff;
+      box-shadow: 0 4px 16px rgba(245,158,11,0.25), 0 1px 3px rgba(245,158,11,0.15);
     }
-    .btn-primary:hover { background: var(--primary-hover); }
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 28px rgba(245,158,11,0.3), 0 2px 6px rgba(245,158,11,0.2);
+    }
     .btn-secondary {
       background: var(--card);
       color: var(--text);
-      border-color: var(--border);
+      border-color: var(--border-strong);
+      box-shadow: var(--shadow-sm);
     }
-    .btn-secondary:hover { background: var(--border); }
-    .btn svg { width: 18px; height: 18px; }
+    .btn-secondary:hover {
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-md);
+      background: var(--card-hover);
+    }
 
-    /* Screenshots */
+    /* ---- Screenshots ---- */
     .screenshots {
-      padding: 0 0 48px;
+      padding: 0 0 72px;
+      position: relative;
+      z-index: 1;
     }
     .screenshot-grid {
       display: grid;
       grid-template-columns: repeat(2, 1fr);
-      gap: 20px;
+      gap: 28px;
     }
     .screenshot-item {
       text-align: center;
+      transition: transform 0.5s cubic-bezier(0.22, 1, 0.36, 1);
     }
-    .screenshot-item img {
+    .screenshot-item:hover {
+      transform: translateY(-6px);
+    }
+    .screenshot-frame {
+      position: relative;
+      border-radius: 16px;
+      overflow: hidden;
+      background: var(--card);
+      border: 1px solid var(--border-strong);
+      box-shadow: var(--shadow-screenshot);
+    }
+    .screenshot-frame::before {
+      content: '';
+      display: block;
+      height: 36px;
+      background: var(--bg-subtle);
+      border-bottom: 1px solid var(--border);
+      position: relative;
+    }
+    .screenshot-frame::after {
+      content: '';
+      position: absolute;
+      top: 13px;
+      left: 14px;
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: #ef4444;
+      box-shadow: 16px 0 0 #eab308, 32px 0 0 #22c55e;
+    }
+    .screenshot-frame img {
+      display: block;
       width: 100%;
-      border-radius: var(--radius);
-      border: 1px solid var(--border);
-      box-shadow: 0 2px 12px rgba(0,0,0,0.08);
     }
     .screenshot-item p {
-      margin-top: 10px;
+      margin-top: 14px;
       font-size: 14px;
       color: var(--muted);
       font-weight: 500;
-    }
-    @media (max-width: 640px) {
-      .screenshot-grid { grid-template-columns: 1fr; }
+      letter-spacing: 0.3px;
     }
 
-    /* Features */
+    /* ---- Section Header ---- */
+    .section-header {
+      text-align: center;
+      margin-bottom: 48px;
+    }
+    .section-label {
+      font-family: 'DM Sans', sans-serif;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--accent);
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      margin-bottom: 12px;
+    }
+    .section-title {
+      font-family: 'Outfit', sans-serif;
+      font-size: 36px;
+      font-weight: 700;
+      letter-spacing: -1px;
+      line-height: 1.2;
+    }
+
+    /* ---- Features ---- */
     .features {
-      padding: 48px 0 64px;
+      padding: 72px 0 80px;
+      position: relative;
+    }
+    .features::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: var(--bg-subtle);
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+      z-index: -1;
     }
     .features-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-      gap: 16px;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 18px;
     }
     .feature-card {
       background: var(--card);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      padding: 24px;
+      border: 1px solid var(--border-strong);
+      border-radius: 16px;
+      padding: 28px 24px;
+      transition: all 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+      position: relative;
+      overflow: hidden;
+    }
+    .feature-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 3px;
+      background: linear-gradient(90deg, var(--accent), transparent);
+      opacity: 0;
+      transition: opacity 0.35s ease;
+    }
+    .feature-card:hover {
+      transform: translateY(-4px);
+      box-shadow: var(--shadow-lg);
+      border-color: var(--accent-glow);
+    }
+    .feature-card:hover::before {
+      opacity: 1;
     }
     .feature-icon {
-      width: 40px;
-      height: 40px;
-      border-radius: 10px;
+      width: 44px;
+      height: 44px;
+      border-radius: 12px;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 20px;
-      margin-bottom: 14px;
+      font-size: 22px;
+      margin-bottom: 16px;
+      background: var(--accent-soft);
     }
     .feature-card h3 {
-      font-size: 15px;
-      font-weight: 700;
-      margin-bottom: 6px;
+      font-family: 'Outfit', sans-serif;
+      font-size: 16px;
+      font-weight: 650;
+      margin-bottom: 8px;
+      letter-spacing: -0.2px;
     }
     .feature-card p {
       font-size: 14px;
       color: var(--muted);
-      line-height: 1.5;
+      line-height: 1.6;
     }
 
-    /* Tech */
+    /* ---- Tech Stack ---- */
     .tech {
-      padding: 0 0 64px;
+      padding: 72px 0;
       text-align: center;
-    }
-    .tech h2 {
-      font-size: 14px;
-      font-weight: 600;
-      color: var(--muted);
-      text-transform: uppercase;
-      letter-spacing: 1px;
-      margin-bottom: 20px;
     }
     .tech-tags {
       display: flex;
-      gap: 8px;
+      gap: 10px;
       justify-content: center;
       flex-wrap: wrap;
+      margin-top: 32px;
     }
     .tech-tag {
       background: var(--card);
-      border: 1px solid var(--border);
+      border: 1px solid var(--border-strong);
       border-radius: 999px;
-      padding: 6px 16px;
-      font-size: 13px;
+      padding: 8px 20px;
+      font-size: 14px;
       font-weight: 500;
-      color: var(--muted);
+      color: var(--text-secondary);
+      transition: all 0.25s ease;
+      cursor: default;
+    }
+    .tech-tag:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+      background: var(--accent-soft);
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-sm);
     }
 
-    /* Platforms */
+    /* ---- Platform ---- */
     .platforms {
-      padding: 0 0 64px;
+      padding: 0 0 80px;
       text-align: center;
     }
-    .platforms h2 {
-      font-size: 24px;
-      font-weight: 700;
-      margin-bottom: 8px;
-    }
-    .platforms > p {
-      color: var(--muted);
-      font-size: 15px;
-      margin-bottom: 28px;
-    }
-    .platform-cards {
+    .platform-card-row {
       display: flex;
-      gap: 16px;
+      gap: 20px;
       justify-content: center;
       flex-wrap: wrap;
+      margin-top: 36px;
     }
     .platform-card {
       background: var(--card);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      padding: 28px 36px;
+      border: 1px solid var(--border-strong);
+      border-radius: 16px;
+      padding: 36px 48px;
       text-align: center;
-      min-width: 180px;
+      transition: all 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+      position: relative;
+      overflow: hidden;
     }
-    .platform-card .icon { font-size: 32px; margin-bottom: 10px; }
-    .platform-card h3 { font-size: 16px; font-weight: 600; margin-bottom: 4px; }
-    .platform-card p { font-size: 13px; color: var(--muted); }
+    .platform-card:hover {
+      transform: translateY(-4px);
+      box-shadow: var(--shadow-lg);
+    }
+    .platform-icon {
+      width: 56px;
+      height: 56px;
+      border-radius: 14px;
+      background: var(--bg-subtle);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 28px;
+      margin: 0 auto 14px;
+    }
+    .platform-card h3 {
+      font-family: 'Outfit', sans-serif;
+      font-size: 18px;
+      font-weight: 650;
+      margin-bottom: 6px;
+    }
+    .platform-card p {
+      font-size: 13px;
+      color: var(--muted);
+      line-height: 1.5;
+    }
 
-    /* Footer */
+    /* ---- CTA ---- */
+    .cta {
+      padding: 72px 0;
+      position: relative;
+    }
+    .cta::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: var(--bg-subtle);
+      border-top: 1px solid var(--border);
+      z-index: -1;
+    }
+    .cta-inner {
+      text-align: center;
+      background: var(--card);
+      border: 1px solid var(--border-strong);
+      border-radius: 24px;
+      padding: 56px 40px;
+      position: relative;
+      overflow: hidden;
+      box-shadow: var(--shadow-md);
+    }
+    .cta-inner::before {
+      content: '';
+      position: absolute;
+      top: -1px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 200px;
+      height: 3px;
+      background: linear-gradient(90deg, transparent, var(--accent), transparent);
+    }
+    .cta-inner h2 {
+      font-family: 'Outfit', sans-serif;
+      font-size: 32px;
+      font-weight: 700;
+      letter-spacing: -0.8px;
+      margin-bottom: 12px;
+    }
+    .cta-inner p {
+      color: var(--muted);
+      font-size: 16px;
+      margin-bottom: 32px;
+      max-width: 440px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    /* ---- Footer ---- */
     footer {
       text-align: center;
-      padding: 32px 0;
+      padding: 36px 0;
       border-top: 1px solid var(--border);
       color: var(--muted);
       font-size: 13px;
     }
-    footer a { color: var(--primary); text-decoration: none; }
+    footer a {
+      color: var(--accent);
+      text-decoration: none;
+      font-weight: 500;
+    }
     footer a:hover { text-decoration: underline; }
 
-    /* Responsive */
-    @media (max-width: 640px) {
-      .hero { padding: 48px 0 32px; }
-      .hero h1 { font-size: 32px; }
-      .hero p { font-size: 16px; }
+    /* ---- Scroll Reveal ---- */
+    .scroll-reveal {
+      opacity: 0;
+      transform: translateY(32px);
+      transition: all 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+    .scroll-reveal.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* ---- Responsive ---- */
+    @media (max-width: 768px) {
+      .hero { padding: 56px 0 40px; }
+      .hero h1 { font-size: 40px; letter-spacing: -1.5px; }
+      .hero-tagline { font-size: 20px; }
       .features-grid { grid-template-columns: 1fr; }
+      .screenshot-grid { grid-template-columns: 1fr; gap: 20px; }
+      .section-title { font-size: 28px; }
+      .cta-inner { padding: 40px 24px; }
+      .cta-inner h2 { font-size: 26px; }
+    }
+    @media (max-width: 480px) {
+      .hero h1 { font-size: 32px; }
+      .container { padding: 0 18px; }
     }
   </style>
 </head>
 <body>
-  <!-- Top Header with App Name + Switchers -->
+  <!-- Top Header -->
   <header class="top-header">
     <div class="container">
       <a class="app-brand" href="#">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        <div class="app-brand-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        </div>
         <span>CronPilot</span>
       </a>
       <div class="header-actions">
@@ -333,81 +668,106 @@
     </div>
   </header>
 
-  <div class="container">
-    <!-- Hero -->
-    <section class="hero">
-      <div class="hero-badge">
-        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-        <span data-i18n="badge"></span>
-      </div>
-      <h1><span>CronPilot</span></h1>
-      <p class="hero-tagline" data-i18n="heroTagline"></p>
-      <p data-i18n="heroDesc"></p>
-      <div class="hero-buttons">
-        <a href="https://github.com/lifedever/CronPilot/releases/latest" class="btn btn-primary">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-          <span data-i18n="download"></span>
-        </a>
-        <a href="https://github.com/lifedever/CronPilot" class="btn btn-secondary">
-          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z"/></svg>
-          GitHub
-        </a>
-      </div>
-    </section>
+  <!-- Hero -->
+  <div class="hero-wrapper">
+    <div class="hero-bg"></div>
+    <div class="hero-orbs">
+      <div class="hero-orb hero-orb-1"></div>
+      <div class="hero-orb hero-orb-2"></div>
+      <div class="hero-orb hero-orb-3"></div>
+    </div>
+    <div class="container">
+      <section class="hero">
+        <div class="hero-badge reveal reveal-d1">
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          <span data-i18n="badge"></span>
+        </div>
+        <h1 class="reveal reveal-d2">CronPilot</h1>
+        <p class="hero-tagline reveal reveal-d3" data-i18n="heroTagline"></p>
+        <p class="hero-desc reveal reveal-d4" data-i18n="heroDesc"></p>
+        <div class="hero-buttons reveal reveal-d5">
+          <a href="https://github.com/lifedever/CronPilot/releases/latest" class="btn btn-primary">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            <span data-i18n="download"></span>
+          </a>
+          <a href="https://github.com/lifedever/CronPilot" class="btn btn-secondary">
+            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z"/></svg>
+            GitHub
+          </a>
+        </div>
+      </section>
+    </div>
+  </div>
 
-    <!-- Screenshots -->
-    <section class="screenshots">
+  <!-- Screenshots -->
+  <div class="container">
+    <section class="screenshots scroll-reveal">
       <div class="screenshot-grid">
         <div class="screenshot-item">
-          <img src="https://raw.githubusercontent.com/lifedever/CronPilot/main/public/screenshot-jobs.png" alt="Job Management" />
+          <div class="screenshot-frame">
+            <img src="https://raw.githubusercontent.com/lifedever/CronPilot/main/public/screenshot-jobs.png" alt="Job Management" />
+          </div>
           <p data-i18n="screenshotJobs"></p>
         </div>
         <div class="screenshot-item">
-          <img src="https://raw.githubusercontent.com/lifedever/CronPilot/main/public/screenshot-conflict.png" alt="Conflict Detection" />
+          <div class="screenshot-frame">
+            <img src="https://raw.githubusercontent.com/lifedever/CronPilot/main/public/screenshot-conflict.png" alt="Conflict Detection" />
+          </div>
           <p data-i18n="screenshotConflict"></p>
         </div>
       </div>
     </section>
+  </div>
 
-    <!-- Features (6 cards) -->
-    <section class="features">
+  <!-- Features -->
+  <section class="features">
+    <div class="container">
+      <div class="section-header scroll-reveal">
+        <p class="section-label" data-i18n="featuresLabel"></p>
+        <h2 class="section-title" data-i18n="featuresTitle"></h2>
+      </div>
       <div class="features-grid">
-        <div class="feature-card">
+        <div class="feature-card scroll-reveal">
           <div class="feature-icon">&#128736;</div>
           <h3 data-i18n="f1Title"></h3>
           <p data-i18n="f1Desc"></p>
         </div>
-        <div class="feature-card">
+        <div class="feature-card scroll-reveal">
           <div class="feature-icon">&#128197;</div>
           <h3 data-i18n="f2Title"></h3>
           <p data-i18n="f2Desc"></p>
         </div>
-        <div class="feature-card">
+        <div class="feature-card scroll-reveal">
           <div class="feature-icon">&#9889;</div>
           <h3 data-i18n="f3Title"></h3>
           <p data-i18n="f3Desc"></p>
         </div>
-        <div class="feature-card">
+        <div class="feature-card scroll-reveal">
           <div class="feature-icon">&#128260;</div>
           <h3 data-i18n="f4Title"></h3>
           <p data-i18n="f4Desc"></p>
         </div>
-        <div class="feature-card">
+        <div class="feature-card scroll-reveal">
           <div class="feature-icon">&#128737;</div>
           <h3 data-i18n="f5Title"></h3>
           <p data-i18n="f5Desc"></p>
         </div>
-        <div class="feature-card">
+        <div class="feature-card scroll-reveal">
           <div class="feature-icon">&#128202;</div>
           <h3 data-i18n="f9Title"></h3>
           <p data-i18n="f9Desc"></p>
         </div>
       </div>
-    </section>
+    </div>
+  </section>
 
-    <!-- Tech Stack -->
-    <section class="tech">
-      <h2 data-i18n="techTitle"></h2>
+  <!-- Tech Stack -->
+  <div class="container">
+    <section class="tech scroll-reveal">
+      <div class="section-header">
+        <p class="section-label" data-i18n="techLabel"></p>
+        <h2 class="section-title" data-i18n="techTitle"></h2>
+      </div>
       <div class="tech-tags">
         <span class="tech-tag">Tauri v2</span>
         <span class="tech-tag">Rust</span>
@@ -420,12 +780,15 @@
     </section>
 
     <!-- Platforms -->
-    <section class="platforms">
-      <h2 data-i18n="platformTitle"></h2>
-      <p data-i18n="platformDesc"></p>
-      <div class="platform-cards">
+    <section class="platforms scroll-reveal">
+      <div class="section-header">
+        <p class="section-label" data-i18n="platformLabel"></p>
+        <h2 class="section-title" data-i18n="platformTitle"></h2>
+      </div>
+      <p style="color:var(--muted);font-size:15px;margin-top:-32px;margin-bottom:8px;" data-i18n="platformDesc"></p>
+      <div class="platform-card-row">
         <div class="platform-card">
-          <div class="icon">&#63743;</div>
+          <div class="platform-icon">&#63743;</div>
           <h3>macOS</h3>
           <p data-i18n="platformMac"></p>
         </div>
@@ -433,10 +796,30 @@
     </section>
   </div>
 
+  <!-- CTA -->
+  <section class="cta">
+    <div class="container">
+      <div class="cta-inner scroll-reveal">
+        <h2 data-i18n="ctaTitle"></h2>
+        <p data-i18n="ctaDesc"></p>
+        <div class="hero-buttons">
+          <a href="https://github.com/lifedever/CronPilot/releases/latest" class="btn btn-primary">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            <span data-i18n="download"></span>
+          </a>
+          <a href="https://github.com/lifedever/CronPilot" class="btn btn-secondary">
+            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z"/></svg>
+            GitHub
+          </a>
+        </div>
+      </div>
+    </div>
+  </section>
+
   <footer>
     <div class="container">
       <p data-i18n="footerLicense"></p>
-      <p style="margin-top: 4px;" data-i18n-html="footerMade"></p>
+      <p style="margin-top: 6px;" data-i18n-html="footerMade"></p>
     </div>
   </footer>
 
@@ -444,11 +827,13 @@
     const i18n = {
       en: {
         badge: "Open Source & Free",
-        heroTagline: "Manage Crontab Visually",
+        heroTagline: "Manage Crontab, Visually.",
         heroDesc: "A lightweight, beautiful desktop app for managing your local crontab jobs. Auto conflict detection, execution logging, and a powerful dashboard — no Docker, no Node.js, just install and use.",
         download: "Download",
         screenshotJobs: "Job Management",
         screenshotConflict: "Conflict Detection",
+        featuresLabel: "Features",
+        featuresTitle: "Everything You Need",
         f1Title: "Visual CRUD",
         f1Desc: "Create, edit, delete, and toggle cron jobs with a clean UI. No more crontab -e.",
         f2Title: "Cron Expression Builder",
@@ -461,20 +846,26 @@
         f5Desc: "Checks if the executable exists and warns about dangerous commands before saving.",
         f9Title: "Dashboard",
         f9Desc: "Job stats, paginated activity log, time-based log cleanup (1d/7d/30d), and auto-refresh every 30 seconds.",
-        techTitle: "Built With",
+        techLabel: "Tech Stack",
+        techTitle: "Built With Modern Tools",
+        platformLabel: "Platforms",
         platformTitle: "Available Platforms",
         platformDesc: "CronPilot manages the system crontab, currently available for macOS.",
         platformMac: ".dmg installer<br/>Intel & Apple Silicon",
+        ctaTitle: "Ready to Simplify Your Crontab?",
+        ctaDesc: "Download CronPilot and start managing your scheduled tasks with a beautiful interface.",
         footerLicense: "CronPilot is open source under the MIT License.",
         footerMade: 'Made with &#10084;&#65039; by <a href="https://github.com/lifedever">lifedever</a>',
       },
       zh: {
         badge: "开源免费",
-        heroTagline: "可视化 Crontab 管理工具",
+        heroTagline: "可视化管理 Crontab",
         heroDesc: "一款轻量美观的桌面应用，可视化管理本地 crontab 定时任务。自动冲突检测、执行日志捕获、强大仪表盘——无需 Docker、无需 Node.js，安装即用。",
         download: "下载",
         screenshotJobs: "任务管理",
         screenshotConflict: "冲突检测",
+        featuresLabel: "功能特性",
+        featuresTitle: "你需要的一切",
         f1Title: "可视化管理",
         f1Desc: "通过简洁的界面创建、编辑、删除和启用/禁用定时任务，告别 crontab -e。",
         f2Title: "Cron 表达式构建器",
@@ -487,10 +878,14 @@
         f5Desc: "保存前自动检测脚本是否可执行，识别危险命令并警告。",
         f9Title: "仪表盘",
         f9Desc: "任务统计、分页活动日志、按时间清理日志（1天/7天/30天）、每 30 秒自动刷新。",
-        techTitle: "技术栈",
+        techLabel: "技术栈",
+        techTitle: "使用现代工具构建",
+        platformLabel: "平台",
         platformTitle: "支持平台",
         platformDesc: "CronPilot 管理系统 crontab，目前支持 macOS。",
         platformMac: ".dmg 安装包<br/>Intel 和 Apple Silicon",
+        ctaTitle: "准备好简化你的 Crontab 了吗？",
+        ctaDesc: "下载 CronPilot，用美观的界面管理你的定时任务。",
         footerLicense: "CronPilot 基于 MIT 协议开源。",
         footerMade: '由 <a href="https://github.com/lifedever">lifedever</a> 用 &#10084;&#65039; 打造',
       }
@@ -546,6 +941,25 @@
     // Auto-detect theme
     const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
     applyTheme(prefersDark ? "dark" : "light");
+
+    // Scroll reveal with IntersectionObserver
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach((entry, i) => {
+        if (entry.isIntersecting) {
+          // Stagger children if it's a grid parent
+          const cards = entry.target.querySelectorAll('.feature-card, .screenshot-item');
+          if (cards.length > 0) {
+            cards.forEach((card, idx) => {
+              card.style.transitionDelay = `${idx * 0.08}s`;
+            });
+          }
+          entry.target.classList.add('visible');
+          observer.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.15, rootMargin: '0px 0px -40px 0px' });
+
+    document.querySelectorAll('.scroll-reveal').forEach(el => observer.observe(el));
   </script>
 </body>
 </html>

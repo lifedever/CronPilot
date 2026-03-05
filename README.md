@@ -4,9 +4,9 @@
 
 ## 截图
 
-| 任务管理 | 冲突检测 |
-|:---:|:---:|
-| <img src="public/screenshot-jobs.png" width="400" /> | <img src="public/screenshot-conflict.png" width="400" /> |
+| 仪表盘 | 任务管理 | 冲突检测 |
+|:---:|:---:|:---:|
+| <img src="public/screenshot-dashboard.png" width="280" /> | <img src="public/screenshot-jobs.png" width="280" /> | <img src="public/screenshot-conflict.png" width="280" /> |
 
 ## 功能
 

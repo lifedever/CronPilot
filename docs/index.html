@@ -170,6 +170,34 @@
     .btn-secondary:hover { background: var(--border); }
     .btn svg { width: 18px; height: 18px; }
 
+    /* Screenshots */
+    .screenshots {
+      padding: 0 0 48px;
+    }
+    .screenshot-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 20px;
+    }
+    .screenshot-item {
+      text-align: center;
+    }
+    .screenshot-item img {
+      width: 100%;
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+      box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+    }
+    .screenshot-item p {
+      margin-top: 10px;
+      font-size: 14px;
+      color: var(--muted);
+      font-weight: 500;
+    }
+    @media (max-width: 640px) {
+      .screenshot-grid { grid-template-columns: 1fr; }
+    }
+
     /* Features */
     .features {
       padding: 48px 0 64px;
@@ -327,7 +355,21 @@
       </div>
     </section>
 
-    <!-- Features (6 cards, removed: Bilingual, Dark Mode, Auto Update) -->
+    <!-- Screenshots -->
+    <section class="screenshots">
+      <div class="screenshot-grid">
+        <div class="screenshot-item">
+          <img src="https://raw.githubusercontent.com/lifedever/CronPilot/main/public/screenshot-jobs.png" alt="Job Management" />
+          <p data-i18n="screenshotJobs"></p>
+        </div>
+        <div class="screenshot-item">
+          <img src="https://raw.githubusercontent.com/lifedever/CronPilot/main/public/screenshot-conflict.png" alt="Conflict Detection" />
+          <p data-i18n="screenshotConflict"></p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Features (6 cards) -->
     <section class="features">
       <div class="features-grid">
         <div class="feature-card">
@@ -405,6 +447,8 @@
         heroTagline: "Manage Crontab Visually",
         heroDesc: "A lightweight, beautiful desktop app for managing your local crontab jobs. Auto conflict detection, execution logging, and a powerful dashboard — no Docker, no Node.js, just install and use.",
         download: "Download",
+        screenshotJobs: "Job Management",
+        screenshotConflict: "Conflict Detection",
         f1Title: "Visual CRUD",
         f1Desc: "Create, edit, delete, and toggle cron jobs with a clean UI. No more crontab -e.",
         f2Title: "Cron Expression Builder",
@@ -429,6 +473,8 @@
         heroTagline: "可视化 Crontab 管理工具",
         heroDesc: "一款轻量美观的桌面应用，可视化管理本地 crontab 定时任务。自动冲突检测、执行日志捕获、强大仪表盘——无需 Docker、无需 Node.js，安装即用。",
         download: "下载",
+        screenshotJobs: "任务管理",
+        screenshotConflict: "冲突检测",
         f1Title: "可视化管理",
         f1Desc: "通过简洁的界面创建、编辑、删除和启用/禁用定时任务，告别 crontab -e。",
         f2Title: "Cron 表达式构建器",

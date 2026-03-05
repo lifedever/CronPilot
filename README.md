@@ -2,6 +2,12 @@
 
 本地 crontab 可视化管理桌面工具。告别手动编辑 crontab，用图形界面轻松管理定时任务。
 
+## 截图
+
+| 任务管理 | 冲突检测 |
+|:---:|:---:|
+| <img src="public/screenshot-jobs.png" width="400" /> | <img src="public/screenshot-conflict.png" width="400" /> |
+
 ## 功能
 
 - **任务管理** - 创建、编辑、删除、启用/禁用定时任务

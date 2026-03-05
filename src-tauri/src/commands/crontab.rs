@@ -17,7 +17,7 @@ pub struct ImportResult {
 }
 
 /// Parse a single crontab line into (expression, command)
-fn parse_crontab_line(line: &str) -> Option<(String, String)> {
+pub(crate) fn parse_crontab_line(line: &str) -> Option<(String, String)> {
     let line = line.trim();
     if line.is_empty() || line.starts_with('#') || line.contains('=') && !line.contains(' ') {
         return None;
@@ -46,7 +46,7 @@ fn parse_crontab_line(line: &str) -> Option<(String, String)> {
 }
 
 /// Generate a short name from the command
-fn name_from_command(cmd: &str) -> String {
+pub(crate) fn name_from_command(cmd: &str) -> String {
     let basename = cmd
         .split_whitespace()
         .next()
@@ -269,4 +269,94 @@ pub fn import_from_crontab(db: State<DbState>) -> Result<ImportResult, AppError>
     }
 
     Ok(ImportResult { imported, skipped })
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    // --- parse_crontab_line ---
+
+    #[test]
+    fn test_parse_valid_crontab_line() {
+        let result = parse_crontab_line("0 0 * * * /usr/bin/backup.sh");
+        assert_eq!(
+            result,
+            Some(("0 0 * * *".to_string(), "/usr/bin/backup.sh".to_string()))
+        );
+    }
+
+    #[test]
+    fn test_parse_crontab_line_with_args() {
+        let result = parse_crontab_line("*/5 * * * * /usr/bin/cmd --flag arg1 arg2");
+        assert_eq!(
+            result,
+            Some((
+                "*/5 * * * *".to_string(),
+                "/usr/bin/cmd --flag arg1 arg2".to_string()
+            ))
+        );
+    }
+
+    #[test]
+    fn test_parse_crontab_line_empty() {
+        assert_eq!(parse_crontab_line(""), None);
+        assert_eq!(parse_crontab_line("   "), None);
+    }
+
+    #[test]
+    fn test_parse_crontab_line_comment() {
+        assert_eq!(parse_crontab_line("# this is a comment"), None);
+        assert_eq!(parse_crontab_line("  # indented comment"), None);
+    }
+
+    #[test]
+    fn test_parse_crontab_line_env_vars() {
+        assert_eq!(parse_crontab_line("SHELL=/bin/bash"), None);
+        assert_eq!(parse_crontab_line("PATH=/usr/bin:/bin"), None);
+        assert_eq!(parse_crontab_line("MAILTO=user@example.com"), None);
+        assert_eq!(parse_crontab_line("HOME=/home/user"), None);
+    }
+
+    #[test]
+    fn test_parse_crontab_line_too_few_fields() {
+        assert_eq!(parse_crontab_line("0 0 * * *"), None); // 5 fields, no command
+        assert_eq!(parse_crontab_line("0 0 *"), None);
+    }
+
+    #[test]
+    fn test_parse_crontab_line_with_leading_whitespace() {
+        let result = parse_crontab_line("  0 0 * * * /usr/bin/cmd");
+        assert_eq!(
+            result,
+            Some(("0 0 * * *".to_string(), "/usr/bin/cmd".to_string()))
+        );
+    }
+
+    // --- name_from_command ---
+
+    #[test]
+    fn test_name_from_absolute_path() {
+        assert_eq!(name_from_command("/usr/bin/backup.sh"), "backup.sh");
+        assert_eq!(name_from_command("/usr/local/bin/python3"), "python3");
+    }
+
+    #[test]
+    fn test_name_from_command_with_args() {
+        assert_eq!(
+            name_from_command("/usr/bin/python3 /path/to/script.py --verbose"),
+            "python3"
+        );
+    }
+
+    #[test]
+    fn test_name_from_simple_command() {
+        assert_eq!(name_from_command("echo hello"), "echo");
+        assert_eq!(name_from_command("ls"), "ls");
+    }
+
+    #[test]
+    fn test_name_from_empty_command() {
+        assert_eq!(name_from_command(""), "");
+    }
 }

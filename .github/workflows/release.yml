@@ -34,6 +34,9 @@ jobs:
       - name: Install frontend dependencies
         run: pnpm install
 
+      - name: Run tests
+        run: cd src-tauri && cargo test
+
       - name: Build macOS Assets
         run: node scripts/release.mjs
         env:
@@ -52,7 +55,7 @@ jobs:
 
           | File | Architecture |
           |------|-------------|
-          | \`CronPilot_*_aarch64.dmg\` | Apple Silicon (M1/M2/M3/M4) |
+          | \`CronPilot_*_aarch64.dmg\` | Apple Silicon |
           | \`CronPilot_*_x64.dmg\` | Intel Mac |
 
           ## Installation (macOS)

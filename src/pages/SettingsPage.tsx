@@ -273,7 +273,7 @@ export function SettingsPage() {
           <div>
             <p className="text-[14px] font-medium">{t("app.name")}</p>
             <p className="mt-0.5 text-[13px] text-[hsl(var(--muted-foreground))]">
-              v1.0.1 · {isZh ? "本地 Crontab 可视化管理" : "Local crontab visual manager"}
+              v1.1.1 · {isZh ? "本地 Crontab 可视化管理" : "Local crontab visual manager"}
             </p>
           </div>
           <button

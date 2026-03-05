@@ -64,7 +64,7 @@ export function Sidebar() {
           {isZh ? "工作原理" : "How It Works"}
         </button>
         <p className="px-2.5 text-[12px] text-[hsl(var(--sidebar-fg))] opacity-40">
-          v1.0.1
+          v1.1.1
         </p>
       </div>
     </aside>

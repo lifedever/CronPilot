@@ -416,7 +416,7 @@ pub struct ExportJob {
     pub tags: Vec<String>,
 }
 
-#[derive(Serialize)]
+#[derive(Serialize, Deserialize)]
 pub struct ExportData {
     pub version: String,
     pub exported_at: String,

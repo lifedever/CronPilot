@@ -1,0 +1,53 @@
+{
+  "app": {
+    "name": "CronPilot"
+  },
+  "nav": {
+    "dashboard": "Dashboard",
+    "jobs": "Jobs",
+    "settings": "Settings"
+  },
+  "actions": {
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "create": "Create",
+    "confirm": "Confirm",
+    "close": "Close",
+    "search": "Search",
+    "refresh": "Refresh",
+    "import": "Import",
+    "export": "Export",
+    "runNow": "Run Now",
+    "enable": "Enable",
+    "disable": "Disable",
+    "browseFile": "Browse File",
+    "revealInFinder": "Reveal in Finder"
+  },
+  "filter": {
+    "all": "All",
+    "enabled": "Enabled",
+    "disabled": "Disabled"
+  },
+  "status": {
+    "success": "Success",
+    "failed": "Failed",
+    "running": "Running",
+    "timeout": "Timeout",
+    "enabled": "Enabled",
+    "disabled": "Disabled"
+  },
+  "empty": {
+    "noJobs": "No cron jobs yet",
+    "noJobsDesc": "Create your first cron job or import from your system crontab.",
+    "noLogs": "No execution logs",
+    "noLogsDesc": "Logs will appear here once a job has been executed."
+  },
+  "time": {
+    "justNow": "Just now",
+    "minutesAgo": "{{count}} min ago",
+    "hoursAgo": "{{count}}h ago",
+    "daysAgo": "{{count}}d ago"
+  }
+}

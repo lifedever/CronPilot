@@ -1,0 +1,44 @@
+{
+  "title": "Schedule",
+  "modes": {
+    "simple": "Simple",
+    "advanced": "Advanced",
+    "raw": "Raw"
+  },
+  "simple": {
+    "every": "Every",
+    "minutes": "minutes",
+    "hours": "hours",
+    "days": "days",
+    "weeks": "weeks",
+    "months": "months",
+    "at": "at"
+  },
+  "advanced": {
+    "minute": "Minute",
+    "hour": "Hour",
+    "dayOfMonth": "Day (Month)",
+    "month": "Month",
+    "dayOfWeek": "Day (Week)",
+    "every": "Every",
+    "specific": "Specific",
+    "range": "Range",
+    "step": "Every Nth"
+  },
+  "presets": {
+    "everyMinute": "Every minute",
+    "every5Minutes": "Every 5 minutes",
+    "every15Minutes": "Every 15 minutes",
+    "every30Minutes": "Every 30 minutes",
+    "hourly": "Hourly",
+    "daily": "Daily at midnight",
+    "weekly": "Weekly on Monday",
+    "monthly": "Monthly on the 1st"
+  },
+  "preview": {
+    "nextRuns": "Next {{count}} runs",
+    "humanReadable": "Human-readable",
+    "expression": "Expression",
+    "invalid": "Invalid expression"
+  }
+}

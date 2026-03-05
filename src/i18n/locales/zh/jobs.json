@@ -1,0 +1,40 @@
+{
+  "title": "定时任务",
+  "createJob": "新建任务",
+  "editJob": "编辑任务",
+  "deleteJob": "删除任务",
+  "deleteConfirm": "确定要删除「{{name}}」吗？此操作无法撤销。",
+  "fields": {
+    "name": "名称",
+    "namePlaceholder": "例如：数据库备份",
+    "cronExpression": "Cron 表达式",
+    "command": "命令",
+    "commandPlaceholder": "例如：/usr/local/bin/backup.sh",
+    "description": "描述",
+    "descriptionPlaceholder": "可选的任务描述",
+    "tags": "标签",
+    "enabled": "启用"
+  },
+  "table": {
+    "name": "名称",
+    "schedule": "执行计划",
+    "command": "命令",
+    "status": "状态",
+    "lastRun": "上次执行",
+    "actions": "操作",
+    "nextRun": "下次执行"
+  },
+  "stats": {
+    "totalRuns": "总执行次数",
+    "successRate": "成功率",
+    "avgDuration": "平均耗时",
+    "lastRun": "上次执行"
+  },
+  "messages": {
+    "created": "任务创建成功",
+    "updated": "任务更新成功",
+    "deleted": "任务删除成功",
+    "toggled": "任务已{{action}}",
+    "runStarted": "任务开始执行"
+  }
+}

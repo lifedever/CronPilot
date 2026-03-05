@@ -1,0 +1,44 @@
+{
+  "title": "执行计划",
+  "modes": {
+    "simple": "简单",
+    "advanced": "高级",
+    "raw": "原始"
+  },
+  "simple": {
+    "every": "每",
+    "minutes": "分钟",
+    "hours": "小时",
+    "days": "天",
+    "weeks": "周",
+    "months": "月",
+    "at": "在"
+  },
+  "advanced": {
+    "minute": "分钟",
+    "hour": "小时",
+    "dayOfMonth": "日期",
+    "month": "月份",
+    "dayOfWeek": "星期",
+    "every": "每",
+    "specific": "指定",
+    "range": "范围",
+    "step": "间隔"
+  },
+  "presets": {
+    "everyMinute": "每分钟",
+    "every5Minutes": "每 5 分钟",
+    "every15Minutes": "每 15 分钟",
+    "every30Minutes": "每 30 分钟",
+    "hourly": "每小时",
+    "daily": "每天午夜",
+    "weekly": "每周一",
+    "monthly": "每月 1 日"
+  },
+  "preview": {
+    "nextRuns": "接下来 {{count}} 次执行",
+    "humanReadable": "可读描述",
+    "expression": "表达式",
+    "invalid": "无效的表达式"
+  }
+}

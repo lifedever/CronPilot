@@ -1,0 +1,40 @@
+{
+  "title": "Cron Jobs",
+  "createJob": "New Job",
+  "editJob": "Edit Job",
+  "deleteJob": "Delete Job",
+  "deleteConfirm": "Are you sure you want to delete \"{{name}}\"? This action cannot be undone.",
+  "fields": {
+    "name": "Name",
+    "namePlaceholder": "e.g. Database Backup",
+    "cronExpression": "Cron Expression",
+    "command": "Command",
+    "commandPlaceholder": "e.g. /usr/local/bin/backup.sh",
+    "description": "Description",
+    "descriptionPlaceholder": "Optional description for this job",
+    "tags": "Tags",
+    "enabled": "Enabled"
+  },
+  "table": {
+    "name": "Name",
+    "schedule": "Schedule",
+    "command": "Command",
+    "status": "Status",
+    "lastRun": "Last Run",
+    "actions": "Actions",
+    "nextRun": "Next Run"
+  },
+  "stats": {
+    "totalRuns": "Total Runs",
+    "successRate": "Success Rate",
+    "avgDuration": "Avg Duration",
+    "lastRun": "Last Run"
+  },
+  "messages": {
+    "created": "Job created successfully",
+    "updated": "Job updated successfully",
+    "deleted": "Job deleted successfully",
+    "toggled": "Job {{action}} successfully",
+    "runStarted": "Job execution started"
+  }
+}

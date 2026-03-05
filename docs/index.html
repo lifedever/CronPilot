@@ -127,6 +127,12 @@
       margin-bottom: 16px;
     }
     .hero h1 span { color: var(--primary); }
+    .hero-tagline {
+      font-size: 22px;
+      font-weight: 500;
+      color: var(--muted);
+      margin-bottom: 8px;
+    }
     .hero p {
       font-size: 18px;
       color: var(--muted);
@@ -306,7 +312,8 @@
         <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
         <span data-i18n="badge"></span>
       </div>
-      <h1 data-i18n="heroTitle"></h1>
+      <h1><span>CronPilot</span></h1>
+      <p class="hero-tagline" data-i18n="heroTagline"></p>
       <p data-i18n="heroDesc"></p>
       <div class="hero-buttons">
         <a href="https://github.com/lifedever/CronPilot/releases/latest" class="btn btn-primary">
@@ -395,7 +402,7 @@
     const i18n = {
       en: {
         badge: "Open Source & Free",
-        heroTitle: "Manage Crontab<br/><span>Visually</span>",
+        heroTagline: "Manage Crontab Visually",
         heroDesc: "A lightweight, beautiful desktop app for managing your local crontab jobs. No Docker, no Node.js server — just install and use.",
         download: "Download",
         f1Title: "Visual CRUD",
@@ -419,7 +426,7 @@
       },
       zh: {
         badge: "开源免费",
-        heroTitle: "可视化管理<br/><span>Crontab</span>",
+        heroTagline: "可视化 Crontab 管理工具",
         heroDesc: "一款轻量美观的桌面应用，可视化管理本地 crontab 定时任务。无需 Docker、无需 Node.js，安装即用。",
         download: "下载",
         f1Title: "可视化管理",

@@ -107,9 +107,6 @@ export function JobFormDialog({ open, onOpenChange, job }: JobFormDialogProps) {
     return () => clearTimeout(timer);
   }, [cronExpression]);
 
-  // Validate the effective command (command mode: raw command, script mode: wrapped script)
-  const effectiveCommand = mode === "script" ? wrapScript(script) : command;
-
   useEffect(() => {
     const cmdToValidate = mode === "script" ? (script.trim() ? "/bin/bash" : "") : command;
     if (!cmdToValidate.trim()) {

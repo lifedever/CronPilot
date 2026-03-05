@@ -19,9 +19,9 @@
       --muted: #64748b;
       --border: rgba(15,23,42,0.08);
       --border-strong: rgba(15,23,42,0.12);
-      --accent: #f59e0b;
-      --accent-soft: rgba(245,158,11,0.1);
-      --accent-glow: rgba(245,158,11,0.15);
+      --accent: #2563eb;
+      --accent-soft: rgba(37,99,235,0.08);
+      --accent-glow: rgba(37,99,235,0.12);
       --primary: #1e40af;
       --primary-soft: rgba(30,64,175,0.08);
       --header-bg: rgba(252,252,253,0.82);
@@ -29,10 +29,10 @@
       --shadow-md: 0 4px 16px rgba(15,23,42,0.06), 0 1px 3px rgba(15,23,42,0.08);
       --shadow-lg: 0 12px 40px rgba(15,23,42,0.08), 0 4px 12px rgba(15,23,42,0.04);
       --shadow-screenshot: 0 24px 80px rgba(15,23,42,0.12), 0 8px 24px rgba(15,23,42,0.06);
-      --gradient-hero: radial-gradient(ellipse 80% 50% at 50% -20%, rgba(245,158,11,0.06), transparent),
-                        radial-gradient(ellipse 60% 40% at 80% 20%, rgba(30,64,175,0.04), transparent);
-      --orb-1: rgba(245,158,11,0.07);
-      --orb-2: rgba(30,64,175,0.05);
+      --gradient-hero: radial-gradient(ellipse 80% 50% at 50% -20%, rgba(37,99,235,0.06), transparent),
+                        radial-gradient(ellipse 60% 40% at 80% 20%, rgba(59,130,246,0.04), transparent);
+      --orb-1: rgba(37,99,235,0.06);
+      --orb-2: rgba(99,102,241,0.05);
       --orb-3: rgba(16,185,129,0.04);
       --glass: rgba(255,255,255,0.6);
       --glass-border: rgba(255,255,255,0.8);
@@ -47,9 +47,9 @@
       --muted: #7c8aa0;
       --border: rgba(255,255,255,0.06);
       --border-strong: rgba(255,255,255,0.1);
-      --accent: #fbbf24;
-      --accent-soft: rgba(251,191,36,0.1);
-      --accent-glow: rgba(251,191,36,0.08);
+      --accent: #3b82f6;
+      --accent-soft: rgba(59,130,246,0.1);
+      --accent-glow: rgba(59,130,246,0.08);
       --primary: #60a5fa;
       --primary-soft: rgba(96,165,250,0.1);
       --header-bg: rgba(11,14,20,0.8);
@@ -57,10 +57,10 @@
       --shadow-md: 0 4px 16px rgba(0,0,0,0.3);
       --shadow-lg: 0 12px 40px rgba(0,0,0,0.4);
       --shadow-screenshot: 0 24px 80px rgba(0,0,0,0.5), 0 8px 24px rgba(0,0,0,0.3);
-      --gradient-hero: radial-gradient(ellipse 80% 50% at 50% -20%, rgba(251,191,36,0.06), transparent),
-                        radial-gradient(ellipse 60% 40% at 80% 20%, rgba(96,165,250,0.04), transparent);
-      --orb-1: rgba(251,191,36,0.05);
-      --orb-2: rgba(96,165,250,0.04);
+      --gradient-hero: radial-gradient(ellipse 80% 50% at 50% -20%, rgba(59,130,246,0.06), transparent),
+                        radial-gradient(ellipse 60% 40% at 80% 20%, rgba(99,102,241,0.04), transparent);
+      --orb-1: rgba(59,130,246,0.05);
+      --orb-2: rgba(99,102,241,0.04);
       --orb-3: rgba(52,211,153,0.03);
       --glass: rgba(21,25,33,0.6);
       --glass-border: rgba(255,255,255,0.06);
@@ -142,13 +142,13 @@
     .app-brand-icon {
       width: 28px;
       height: 28px;
-      background: linear-gradient(135deg, var(--accent), #d97706);
+      background: linear-gradient(135deg, var(--accent), #1d4ed8);
       border-radius: 7px;
       display: flex;
       align-items: center;
       justify-content: center;
       color: #fff;
-      box-shadow: 0 2px 8px rgba(245,158,11,0.25);
+      box-shadow: 0 2px 8px rgba(37,99,235,0.25);
     }
     .app-brand-icon svg { width: 16px; height: 16px; }
     .app-brand span {
@@ -307,13 +307,13 @@
     }
     .btn svg { width: 18px; height: 18px; }
     .btn-primary {
-      background: linear-gradient(135deg, var(--accent), #d97706);
+      background: linear-gradient(135deg, var(--accent), #1d4ed8);
       color: #fff;
-      box-shadow: 0 4px 16px rgba(245,158,11,0.25), 0 1px 3px rgba(245,158,11,0.15);
+      box-shadow: 0 4px 16px rgba(37,99,235,0.25), 0 1px 3px rgba(37,99,235,0.15);
     }
     .btn-primary:hover {
       transform: translateY(-2px);
-      box-shadow: 0 8px 28px rgba(245,158,11,0.3), 0 2px 6px rgba(245,158,11,0.2);
+      box-shadow: 0 8px 28px rgba(37,99,235,0.3), 0 2px 6px rgba(37,99,235,0.2);
     }
     .btn-secondary {
       background: var(--card);
@@ -327,61 +327,114 @@
       background: var(--card-hover);
     }
 
-    /* ---- Screenshots ---- */
+    /* ---- Screenshot Carousel ---- */
     .screenshots {
       padding: 0 0 72px;
       position: relative;
       z-index: 1;
     }
-    .screenshot-grid {
-      display: grid;
-      grid-template-columns: repeat(2, 1fr);
-      gap: 28px;
-    }
-    .screenshot-item {
-      text-align: center;
-      transition: transform 0.5s cubic-bezier(0.22, 1, 0.36, 1);
-    }
-    .screenshot-item:hover {
-      transform: translateY(-6px);
-    }
-    .screenshot-frame {
+    .carousel {
       position: relative;
-      border-radius: 16px;
+      max-width: 720px;
+      margin: 0 auto;
+    }
+    .carousel-track {
+      position: relative;
       overflow: hidden;
+      border-radius: 16px;
       background: var(--card);
       border: 1px solid var(--border-strong);
       box-shadow: var(--shadow-screenshot);
     }
-    .screenshot-frame::before {
-      content: '';
-      display: block;
+    .carousel-titlebar {
       height: 36px;
       background: var(--bg-subtle);
       border-bottom: 1px solid var(--border);
       position: relative;
+      display: flex;
+      align-items: center;
+      padding: 0 14px;
+      gap: 8px;
     }
-    .screenshot-frame::after {
-      content: '';
-      position: absolute;
-      top: 13px;
-      left: 14px;
+    .carousel-dot-red,
+    .carousel-dot-yellow,
+    .carousel-dot-green {
       width: 10px;
       height: 10px;
       border-radius: 50%;
-      background: #ef4444;
-      box-shadow: 16px 0 0 #eab308, 32px 0 0 #22c55e;
     }
-    .screenshot-frame img {
+    .carousel-dot-red { background: #ef4444; }
+    .carousel-dot-yellow { background: #eab308; }
+    .carousel-dot-green { background: #22c55e; }
+    .carousel-slides {
+      position: relative;
+      display: flex;
+      transition: transform 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+    .carousel-slide {
+      min-width: 100%;
+      flex-shrink: 0;
+    }
+    .carousel-slide img {
       display: block;
       width: 100%;
     }
-    .screenshot-item p {
+    .carousel-controls {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 20px;
+      margin-top: 20px;
+    }
+    .carousel-arrow {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      border: 1px solid var(--border-strong);
+      background: var(--card);
+      color: var(--muted);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.25s ease;
+    }
+    .carousel-arrow:hover {
+      background: var(--card-hover);
+      color: var(--text);
+      box-shadow: var(--shadow-sm);
+      transform: scale(1.08);
+    }
+    .carousel-arrow svg {
+      width: 16px;
+      height: 16px;
+    }
+    .carousel-indicators {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+    .carousel-ind {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--border-strong);
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+    .carousel-ind.active {
+      width: 24px;
+      border-radius: 4px;
+      background: var(--accent);
+    }
+    .carousel-label {
+      text-align: center;
       margin-top: 14px;
       font-size: 14px;
       color: var(--muted);
       font-weight: 500;
       letter-spacing: 0.3px;
+      transition: opacity 0.3s ease;
     }
 
     /* ---- Section Header ---- */
@@ -638,7 +691,6 @@
       .hero h1 { font-size: 40px; letter-spacing: -1.5px; }
       .hero-tagline { font-size: 20px; }
       .features-grid { grid-template-columns: 1fr; }
-      .screenshot-grid { grid-template-columns: 1fr; gap: 20px; }
       .section-title { font-size: 28px; }
       .cta-inner { padding: 40px 24px; }
       .cta-inner h2 { font-size: 26px; }
@@ -699,22 +751,35 @@
     </div>
   </div>
 
-  <!-- Screenshots -->
+  <!-- Screenshots Carousel -->
   <div class="container">
-    <section class="screenshots scroll-reveal">
-      <div class="screenshot-grid">
-        <div class="screenshot-item">
-          <div class="screenshot-frame">
-            <img src="https://raw.githubusercontent.com/lifedever/CronPilot/main/public/screenshot-jobs.png" alt="Job Management" />
+    <section class="screenshots scroll-reveal" id="screenshotCarousel">
+      <div class="carousel">
+        <div class="carousel-track">
+          <div class="carousel-titlebar">
+            <span class="carousel-dot-red"></span>
+            <span class="carousel-dot-yellow"></span>
+            <span class="carousel-dot-green"></span>
           </div>
-          <p data-i18n="screenshotJobs"></p>
-        </div>
-        <div class="screenshot-item">
-          <div class="screenshot-frame">
-            <img src="https://raw.githubusercontent.com/lifedever/CronPilot/main/public/screenshot-conflict.png" alt="Conflict Detection" />
+          <div class="carousel-slides" id="carouselSlides">
+            <div class="carousel-slide">
+              <img src="https://raw.githubusercontent.com/lifedever/CronPilot/main/public/screenshot-jobs.png" alt="Job Management" />
+            </div>
+            <div class="carousel-slide">
+              <img src="https://raw.githubusercontent.com/lifedever/CronPilot/main/public/screenshot-conflict.png" alt="Conflict Detection" />
+            </div>
           </div>
-          <p data-i18n="screenshotConflict"></p>
         </div>
+        <div class="carousel-controls">
+          <button class="carousel-arrow" onclick="prevSlide()" aria-label="Previous">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+          </button>
+          <div class="carousel-indicators" id="carouselDots"></div>
+          <button class="carousel-arrow" onclick="nextSlide()" aria-label="Next">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+          </button>
+        </div>
+        <p class="carousel-label" id="carouselLabel"></p>
       </div>
     </section>
   </div>
@@ -960,6 +1025,68 @@
     }, { threshold: 0.15, rootMargin: '0px 0px -40px 0px' });
 
     document.querySelectorAll('.scroll-reveal').forEach(el => observer.observe(el));
+
+    // Screenshot Carousel
+    const slideLabels = {
+      en: ["Job Management", "Conflict Detection"],
+      zh: ["任务管理", "冲突检测"]
+    };
+    let currentSlide = 0;
+    const slides = document.getElementById('carouselSlides');
+    const dotsContainer = document.getElementById('carouselDots');
+    const labelEl = document.getElementById('carouselLabel');
+    const totalSlides = slides.children.length;
+    let autoPlayTimer = null;
+
+    // Build dots
+    for (let i = 0; i < totalSlides; i++) {
+      const dot = document.createElement('span');
+      dot.className = 'carousel-ind' + (i === 0 ? ' active' : '');
+      dot.onclick = () => goToSlide(i);
+      dotsContainer.appendChild(dot);
+    }
+
+    function updateCarousel() {
+      slides.style.transform = `translateX(-${currentSlide * 100}%)`;
+      dotsContainer.querySelectorAll('.carousel-ind').forEach((d, i) => {
+        d.classList.toggle('active', i === currentSlide);
+      });
+      const labels = slideLabels[currentLang] || slideLabels.en;
+      labelEl.textContent = labels[currentSlide] || '';
+    }
+
+    function goToSlide(idx) {
+      currentSlide = idx;
+      updateCarousel();
+      resetAutoPlay();
+    }
+
+    function nextSlide() {
+      currentSlide = (currentSlide + 1) % totalSlides;
+      updateCarousel();
+      resetAutoPlay();
+    }
+
+    function prevSlide() {
+      currentSlide = (currentSlide - 1 + totalSlides) % totalSlides;
+      updateCarousel();
+      resetAutoPlay();
+    }
+
+    function resetAutoPlay() {
+      clearInterval(autoPlayTimer);
+      autoPlayTimer = setInterval(nextSlide, 4000);
+    }
+
+    // Update label on language switch
+    const origApplyLang = applyLang;
+    applyLang = function(lang) {
+      origApplyLang(lang);
+      updateCarousel();
+    };
+
+    updateCarousel();
+    resetAutoPlay();
   </script>
 </body>
 </html>

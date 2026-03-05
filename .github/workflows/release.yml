@@ -1,9 +1,9 @@
 name: Release
-
 on:
   push:
     tags:
       - "v*"
+  workflow_dispatch:
 
 jobs:
   release:
@@ -14,43 +14,79 @@ jobs:
       matrix:
         include:
           - platform: macos-latest
-            args: --target aarch64-apple-darwin
+            target: aarch64-apple-darwin
           - platform: macos-latest
-            args: --target x86_64-apple-darwin
+            target: x86_64-apple-darwin
 
     runs-on: ${{ matrix.platform }}
 
     steps:
-      - uses: actions/checkout@v4
-
-      - name: Install pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: 9
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 20
-          cache: pnpm
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
       - name: Install Rust stable
         uses: dtolnay/rust-toolchain@stable
         with:
           targets: aarch64-apple-darwin,x86_64-apple-darwin
 
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Install Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
       - name: Install frontend dependencies
         run: pnpm install
 
       - name: Build Tauri app
-        uses: tauri-apps/tauri-action@v0
+        run: pnpm tauri build --target ${{ matrix.target }}
+        env:
+          TAURI_SIGNING_PRIVATE_KEY: "dW50cnVzdGVkIGNvbW1lbnQ6IHJzaWduIGVuY3J5cHRlZCBzZWNyZXQga2V5ClJXUlRZMEl5VmRaeElObDNPY1V3WmlDMVptS2NrR3RVSlRZemdSUlp0ZjJvL2RoaWdKQUFBQkFBQUFBQUFBQUFBQUlBQUFBQWJGT0xnclc3OTZuRy8xRVJ5ODRheGZqdmhyMEtJbnFHVXVpcTJwYXc0NUNVQTM4NmxjS29pRVppVDVpT05HRkl6eEdtQzlOUW92OXltMkw0RDRIY1V4YmdGbUFib0IvOFIyc1I4MUx2bU43U3hYa1pSclZxMU95K3czK1FaL2xRWkxINWtFTVZHZmM9Cg=="
+
+      - name: Create Release and Upload Assets
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
-        with:
-          tagName: v__VERSION__
-          releaseName: "CronPilot v__VERSION__"
-          releaseBody: "See the assets to download and install this version."
-          releaseDraft: false
-          prerelease: false
-          args: ${{ matrix.args }}
+        run: |
+          tag_name="${{ github.ref_name }}"
+
+          # Create release (skip if already exists)
+          gh release create "$tag_name" \
+            --title "CronPilot $tag_name" \
+            --notes "## Download
+
+          | File | Architecture |
+          |------|-------------|
+          | \`CronPilot_*_aarch64.dmg\` | Apple Silicon (M1/M2/M3/M4) |
+          | \`CronPilot_*_x64.dmg\` | Intel Mac |
+
+          ## Installation (macOS)
+
+          Since this app is not notarized by Apple, macOS may show a security warning on first launch.
+          Run the following command in Terminal:
+
+          \`\`\`bash
+          sudo xattr -rd com.apple.quarantine /Applications/CronPilot.app
+          \`\`\`
+
+          ---
+
+          由于此应用未经 Apple 公证，首次打开可能提示"无法验证开发者"。请在终端执行：
+
+          \`\`\`bash
+          sudo xattr -rd com.apple.quarantine /Applications/CronPilot.app
+          \`\`\`
+
+          执行后即可正常打开。" \
+            || echo "Release already exists, uploading assets..."
+
+          # Upload DMG files
+          find src-tauri/target -name "*.dmg" -exec gh release upload "$tag_name" {} --clobber \;
+
+          # Upload updater tarballs (.tar.gz) and signatures (.tar.gz.sig)
+          find src-tauri/target -name "*.app.tar.gz" -exec gh release upload "$tag_name" {} --clobber \;
+          find src-tauri/target -name "*.app.tar.gz.sig" -exec gh release upload "$tag_name" {} --clobber \;

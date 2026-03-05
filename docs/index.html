@@ -341,31 +341,9 @@
     .carousel-track {
       position: relative;
       overflow: hidden;
-      border-radius: 16px;
-      background: var(--card);
-      border: 1px solid var(--border-strong);
+      border-radius: 12px;
       box-shadow: var(--shadow-screenshot);
     }
-    .carousel-titlebar {
-      height: 36px;
-      background: var(--bg-subtle);
-      border-bottom: 1px solid var(--border);
-      position: relative;
-      display: flex;
-      align-items: center;
-      padding: 0 14px;
-      gap: 8px;
-    }
-    .carousel-dot-red,
-    .carousel-dot-yellow,
-    .carousel-dot-green {
-      width: 10px;
-      height: 10px;
-      border-radius: 50%;
-    }
-    .carousel-dot-red { background: #ef4444; }
-    .carousel-dot-yellow { background: #eab308; }
-    .carousel-dot-green { background: #22c55e; }
     .carousel-slides {
       position: relative;
       display: flex;
@@ -756,11 +734,6 @@
     <section class="screenshots scroll-reveal" id="screenshotCarousel">
       <div class="carousel">
         <div class="carousel-track">
-          <div class="carousel-titlebar">
-            <span class="carousel-dot-red"></span>
-            <span class="carousel-dot-yellow"></span>
-            <span class="carousel-dot-green"></span>
-          </div>
           <div class="carousel-slides" id="carouselSlides">
             <div class="carousel-slide">
               <img src="https://raw.githubusercontent.com/lifedever/CronPilot/main/public/screenshot-jobs.png" alt="Job Management" />

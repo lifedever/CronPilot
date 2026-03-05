@@ -1,10 +1,100 @@
+use std::path::Path;
 use std::time::Instant;
 
+use serde::Serialize;
 use tauri::State;
 
+use crate::commands::crontab::sync_to_crontab;
 use crate::db::DbState;
 use crate::error::AppError;
 use crate::models::{CreateJobRequest, ExecutionLog, Job, UpdateJobRequest};
+
+/// Dangerous command patterns that warrant a warning
+const DANGEROUS_PATTERNS: &[(&str, &str)] = &[
+    ("rm -rf /", "Deletes entire filesystem"),
+    ("rm -rf /*", "Deletes entire filesystem"),
+    ("rm -rf ~", "Deletes entire home directory"),
+    ("mkfs.", "Formats disk partition"),
+    ("dd if=", "Raw disk write, can destroy data"),
+    (":(){:|:&};:", "Fork bomb"),
+    (">(){ >|>&};>", "Fork bomb variant"),
+    ("chmod -R 777 /", "Removes all file permissions"),
+    ("chown -R", "Recursive ownership change"),
+    ("> /dev/sda", "Overwrites disk device"),
+    ("mv /* /dev/null", "Moves everything to null"),
+    ("wget|sh", "Downloads and executes remote code"),
+    ("curl|sh", "Downloads and executes remote code"),
+    ("curl|bash", "Downloads and executes remote code"),
+    ("wget|bash", "Downloads and executes remote code"),
+    ("shutdown", "Shuts down the system"),
+    ("reboot", "Reboots the system"),
+    ("init 0", "Shuts down the system"),
+    ("init 6", "Reboots the system"),
+];
+
+#[derive(Serialize)]
+pub struct CommandValidation {
+    pub executable_found: bool,
+    pub executable_path: Option<String>,
+    pub warnings: Vec<String>,
+}
+
+#[tauri::command]
+pub fn validate_command(command: String) -> Result<CommandValidation, AppError> {
+    let mut warnings = Vec::new();
+
+    // Extract the executable (first word, or resolve from path)
+    let trimmed = command.trim();
+    let executable = trimmed
+        .split_whitespace()
+        .next()
+        .unwrap_or("")
+        .to_string();
+
+    // Check if executable exists
+    let (executable_found, executable_path) = if executable.starts_with('/') {
+        // Absolute path - check file exists and is executable
+        let path = Path::new(&executable);
+        if path.exists() {
+            (true, Some(executable.clone()))
+        } else {
+            warnings.push(format!("File not found: {}", executable));
+            (false, None)
+        }
+    } else if !executable.is_empty() {
+        // Relative name - check via `which`
+        let output = std::process::Command::new("which")
+            .arg(&executable)
+            .output();
+        match output {
+            Ok(o) if o.status.success() => {
+                let path = String::from_utf8_lossy(&o.stdout).trim().to_string();
+                (true, Some(path))
+            }
+            _ => {
+                warnings.push(format!("Command not found in PATH: {}", executable));
+                (false, None)
+            }
+        }
+    } else {
+        warnings.push("Empty command".to_string());
+        (false, None)
+    };
+
+    // Scan for dangerous patterns
+    let lower = trimmed.to_lowercase();
+    for (pattern, description) in DANGEROUS_PATTERNS {
+        if lower.contains(&pattern.to_lowercase()) {
+            warnings.push(format!("⚠ Dangerous: {} ({})", pattern, description));
+        }
+    }
+
+    Ok(CommandValidation {
+        executable_found,
+        executable_path,
+        warnings,
+    })
+}
 
 #[tauri::command]
 pub fn list_jobs(db: State<DbState>) -> Result<Vec<Job>, AppError> {
@@ -56,6 +146,9 @@ pub fn create_job(job: CreateJobRequest, db: State<DbState>) -> Result<Job, AppE
     )?;
 
     let id = conn.last_insert_rowid();
+
+    sync_to_crontab(&conn)?;
+
     let mut stmt = conn.prepare(
         "SELECT id, name, cron_expression, command, description, is_enabled, is_synced, tags, created_at, updated_at
          FROM jobs WHERE id = ?1"
@@ -135,6 +228,8 @@ pub fn update_job(id: i64, job: UpdateJobRequest, db: State<DbState>) -> Result<
         return Err(AppError::NotFound(format!("Job {} not found", id)));
     }
 
+    sync_to_crontab(&conn)?;
+
     let mut stmt = conn.prepare(
         "SELECT id, name, cron_expression, command, description, is_enabled, is_synced, tags, created_at, updated_at
          FROM jobs WHERE id = ?1"
@@ -167,6 +262,9 @@ pub fn delete_job(id: i64, db: State<DbState>) -> Result<(), AppError> {
     if rows == 0 {
         return Err(AppError::NotFound(format!("Job {} not found", id)));
     }
+
+    sync_to_crontab(&conn)?;
+
     Ok(())
 }
 
@@ -182,6 +280,8 @@ pub fn toggle_job(id: i64, db: State<DbState>) -> Result<Job, AppError> {
     if rows == 0 {
         return Err(AppError::NotFound(format!("Job {} not found", id)));
     }
+
+    sync_to_crontab(&conn)?;
 
     let mut stmt = conn.prepare(
         "SELECT id, name, cron_expression, command, description, is_enabled, is_synced, tags, created_at, updated_at

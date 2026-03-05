@@ -23,6 +23,10 @@ import { confirm } from "@tauri-apps/plugin-dialog";
 
 type FilterType = "all" | "enabled" | "disabled";
 
+const BTN_BASE = "focus-ring inline-flex h-8 items-center gap-1.5 rounded border px-3 text-[13px] font-medium transition-colors disabled:opacity-50";
+const BTN_PRIMARY = `${BTN_BASE} border-[hsl(var(--primary))] bg-[hsl(var(--primary))] text-[hsl(var(--primary-foreground))] hover:opacity-90`;
+const BTN_SECONDARY = `${BTN_BASE} border-[hsl(var(--border))] bg-[hsl(var(--card))] text-[hsl(var(--foreground))] hover:bg-[hsl(var(--secondary))]`;
+
 export function JobsPage() {
   const { t } = useTranslation("jobs");
   const { t: tc } = useTranslation();
@@ -166,7 +170,7 @@ export function JobsPage() {
             <button
               onClick={handleImport}
               disabled={importing}
-              className="focus-ring inline-flex items-center gap-1.5 rounded border border-[hsl(var(--border))] bg-[hsl(var(--card))] px-2.5 py-[5px] text-[14px] font-medium text-[hsl(var(--foreground))] transition-colors hover:bg-[hsl(var(--secondary))] disabled:opacity-50"
+              className={BTN_SECONDARY}
             >
               {importing ? (
                 <div className="h-3 w-3 animate-spin rounded-full border-[1.5px] border-current border-t-transparent" />
@@ -177,7 +181,7 @@ export function JobsPage() {
             </button>
             <button
               onClick={handleCreate}
-              className="focus-ring inline-flex items-center gap-1.5 rounded bg-[hsl(var(--primary))] px-2.5 py-[5px] text-[14px] font-medium text-[hsl(var(--primary-foreground))] transition-colors hover:opacity-90"
+              className={BTN_PRIMARY}
             >
               <Plus className="h-3 w-3" />
               {t("createJob")}
@@ -199,21 +203,21 @@ export function JobsPage() {
               <p className="text-[14px] text-[hsl(var(--muted-foreground))]">
                 {tc("empty.noJobs")}
               </p>
-              <p className="mt-0.5 text-[13px] text-[hsl(var(--muted-foreground))] opacity-60">
+              <p className="mt-1.5 text-[13px] text-[hsl(var(--muted-foreground))] opacity-60">
                 {tc("empty.noJobsDesc")}
               </p>
             </div>
             <div className="flex gap-2">
               <button
                 onClick={handleImport}
-                className="focus-ring inline-flex items-center gap-1.5 rounded border border-[hsl(var(--border))] bg-[hsl(var(--card))] px-2.5 py-[5px] text-[14px] font-medium transition-colors hover:bg-[hsl(var(--secondary))]"
+                className={BTN_SECONDARY}
               >
                 <Download className="h-3 w-3" />
                 {tc("nav.jobs") === "定时任务" ? "导入 Crontab" : "Import Crontab"}
               </button>
               <button
                 onClick={handleCreate}
-                className="focus-ring inline-flex items-center gap-1.5 rounded bg-[hsl(var(--primary))] px-2.5 py-[5px] text-[14px] font-medium text-[hsl(var(--primary-foreground))] transition-colors hover:opacity-90"
+                className={BTN_PRIMARY}
               >
                 <Plus className="h-3 w-3" />
                 {t("createJob")}

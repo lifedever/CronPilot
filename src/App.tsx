@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "sonner";
@@ -5,6 +6,9 @@ import { AppLayout } from "@/components/layout/AppLayout";
 import { DashboardPage } from "@/pages/DashboardPage";
 import { JobsPage } from "@/pages/JobsPage";
 import { SettingsPage } from "@/pages/SettingsPage";
+import { UpdateToast } from "@/components/UpdateToast";
+import { useAppStore } from "@/store/appStore";
+import { check } from "@tauri-apps/plugin-updater";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -16,6 +20,23 @@ const queryClient = new QueryClient({
 });
 
 function App() {
+  const setUpdateAvailable = useAppStore((s) => s.setUpdateAvailable);
+
+  useEffect(() => {
+    // Auto-check for updates on startup (delay 3s to not block UI)
+    const timer = setTimeout(async () => {
+      try {
+        const update = await check();
+        if (update) {
+          setUpdateAvailable(update.version);
+        }
+      } catch {
+        // Silently ignore — user can still check manually
+      }
+    }, 3000);
+    return () => clearTimeout(timer);
+  }, [setUpdateAvailable]);
+
   return (
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
@@ -26,6 +47,7 @@ function App() {
             <Route path="/settings" element={<SettingsPage />} />
           </Route>
         </Routes>
+        <UpdateToast />
       </BrowserRouter>
       <Toaster
         position="top-center"

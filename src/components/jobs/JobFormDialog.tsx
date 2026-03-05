@@ -1,8 +1,9 @@
 import { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
-import { X, CheckCircle2, AlertCircle, FolderOpen, ExternalLink } from "lucide-react";
+import { X, CheckCircle2, AlertCircle, FolderOpen, ExternalLink, TriangleAlert } from "lucide-react";
 import { useCreateJob, useUpdateJob } from "@/hooks/useJobs";
 import { cronExprApi } from "@/api/cronExpr";
+import { jobsApi, type CommandValidation } from "@/api/jobs";
 import type { Job, CronValidation, NextRun } from "@/types/job";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -39,6 +40,7 @@ export function JobFormDialog({ open, onOpenChange, job }: JobFormDialogProps) {
   const [description, setDescription] = useState("");
   const [validation, setValidation] = useState<CronValidation | null>(null);
   const [nextRuns, setNextRuns] = useState<NextRun[]>([]);
+  const [cmdValidation, setCmdValidation] = useState<CommandValidation | null>(null);
 
   useEffect(() => {
     if (job) {
@@ -73,6 +75,22 @@ export function JobFormDialog({ open, onOpenChange, job }: JobFormDialogProps) {
     }, 300);
     return () => clearTimeout(timer);
   }, [cronExpression]);
+
+  useEffect(() => {
+    if (!command.trim()) {
+      setCmdValidation(null);
+      return;
+    }
+    const timer = setTimeout(async () => {
+      try {
+        const v = await jobsApi.validateCommand(command);
+        setCmdValidation(v);
+      } catch {
+        setCmdValidation(null);
+      }
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [command]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -268,6 +286,27 @@ export function JobFormDialog({ open, onOpenChange, job }: JobFormDialogProps) {
                 </button>
               )}
             </div>
+            {cmdValidation && (
+              <div className="space-y-0.5">
+                {cmdValidation.executable_found ? (
+                  <p className="flex items-center gap-1 text-[12px] text-emerald-600 dark:text-emerald-400">
+                    <CheckCircle2 className="h-3 w-3 shrink-0" />
+                    {cmdValidation.executable_path}
+                  </p>
+                ) : cmdValidation.warnings.length > 0 && !cmdValidation.warnings.some(w => w.startsWith("⚠")) ? (
+                  <p className="flex items-center gap-1 text-[12px] text-amber-600 dark:text-amber-400">
+                    <AlertCircle className="h-3 w-3 shrink-0" />
+                    {cmdValidation.warnings[0]}
+                  </p>
+                ) : null}
+                {cmdValidation.warnings.filter(w => w.startsWith("⚠")).map((w, i) => (
+                  <p key={i} className="flex items-center gap-1 text-[12px] text-rose-500">
+                    <TriangleAlert className="h-3 w-3 shrink-0" />
+                    {w.replace("⚠ ", "")}
+                  </p>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* Description */}

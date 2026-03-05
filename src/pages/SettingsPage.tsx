@@ -10,12 +10,11 @@ import { toast } from "sonner";
 
 export function SettingsPage() {
   const { t, i18n } = useTranslation();
-  const { theme, setTheme } = useAppStore();
+  const { theme, setTheme, updateAvailable, setUpdateAvailable } = useAppStore();
 
   const isZh = i18n.language?.startsWith("zh");
   const [donationOpen, setDonationOpen] = useState(false);
   const [checking, setChecking] = useState(false);
-  const [updateAvailable, setUpdateAvailable] = useState<string | null>(null);
   const [downloading, setDownloading] = useState(false);
   const [downloadProgress, setDownloadProgress] = useState(0);
 

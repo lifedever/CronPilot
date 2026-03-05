@@ -44,6 +44,7 @@ pub fn run() {
             commands::logs::get_recent_logs,
             commands::crontab::import_from_crontab,
             commands::jobs::run_job_now,
+            commands::jobs::validate_command,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

@@ -33,23 +33,22 @@ DB_PATH="{db_path_str}"
 JOB_ID="$1"
 shift
 [ "$1" = "--" ] && shift
-CMD="$*"
 
 # Safety: if anything goes wrong with logging, still run the command
-if [ -z "$JOB_ID" ] || [ -z "$CMD" ]; then
-    sh -c "$CMD"
+if [ -z "$JOB_ID" ] || [ $# -eq 0 ]; then
+    "$@"
     exit $?
 fi
 
 # Check sqlite3 is available
 if ! command -v sqlite3 >/dev/null 2>&1; then
-    sh -c "$CMD"
+    "$@"
     exit $?
 fi
 
 # Check DB exists
 if [ ! -f "$DB_PATH" ]; then
-    sh -c "$CMD"
+    "$@"
     exit $?
 fi
 
@@ -60,8 +59,8 @@ START_MS=$(python3 -c 'import time; print(int(time.time()*1000))' 2>/dev/null ||
 TMPOUT=$(mktemp /tmp/cronpilot_out.XXXXXX)
 TMPERR=$(mktemp /tmp/cronpilot_err.XXXXXX)
 
-# Execute the command directly (cron env cannot provide login shell context)
-sh -c "$CMD" >"$TMPOUT" 2>"$TMPERR"
+# Execute the command directly, preserving argument boundaries
+"$@" >"$TMPOUT" 2>"$TMPERR"
 EXIT_CODE=$?
 
 END_MS=$(python3 -c 'import time; print(int(time.time()*1000))' 2>/dev/null || echo 0)

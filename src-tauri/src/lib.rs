@@ -45,6 +45,8 @@ pub fn run() {
             commands::crontab::import_from_crontab,
             commands::jobs::run_job_now,
             commands::jobs::validate_command,
+            commands::jobs::export_jobs_to_file,
+            commands::jobs::import_jobs_from_backup,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

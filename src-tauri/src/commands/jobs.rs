@@ -1,7 +1,7 @@
 use std::path::Path;
 use std::time::Instant;
 
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use tauri::State;
 
 use crate::commands::crontab::sync_to_crontab;
@@ -403,4 +403,118 @@ pub async fn run_job_now(id: i64, db: State<'_, DbState>) -> Result<ExecutionLog
     })?;
 
     Ok(log)
+}
+
+/// Exportable job data (without internal fields like is_synced)
+#[derive(Serialize, Deserialize)]
+pub struct ExportJob {
+    pub name: String,
+    pub cron_expression: String,
+    pub command: String,
+    pub description: String,
+    pub is_enabled: bool,
+    pub tags: Vec<String>,
+}
+
+#[derive(Serialize)]
+pub struct ExportData {
+    pub version: String,
+    pub exported_at: String,
+    pub jobs: Vec<ExportJob>,
+}
+
+#[derive(Serialize)]
+pub struct ImportBackupResult {
+    pub imported: usize,
+    pub skipped: usize,
+}
+
+#[tauri::command]
+pub fn export_jobs_to_file(path: String, db: State<DbState>) -> Result<usize, AppError> {
+    let conn = db.0.lock().map_err(|e| AppError::Internal(e.to_string()))?;
+    let mut stmt = conn.prepare(
+        "SELECT name, cron_expression, command, description, is_enabled, tags FROM jobs ORDER BY id"
+    )?;
+
+    let jobs: Vec<ExportJob> = stmt
+        .query_map([], |row| {
+            let tags_str: String = row.get(5)?;
+            let tags: Vec<String> = serde_json::from_str(&tags_str).unwrap_or_default();
+            Ok(ExportJob {
+                name: row.get(0)?,
+                cron_expression: row.get(1)?,
+                command: row.get(2)?,
+                description: row.get(3)?,
+                is_enabled: row.get(4)?,
+                tags,
+            })
+        })?
+        .filter_map(|r| r.ok())
+        .collect();
+
+    let export = ExportData {
+        version: "1.0.0".to_string(),
+        exported_at: chrono::Local::now().format("%Y-%m-%d %H:%M:%S").to_string(),
+        jobs,
+    };
+
+    let count = export.jobs.len();
+    let json = serde_json::to_string_pretty(&export)
+        .map_err(|e| AppError::Internal(format!("Failed to serialize: {}", e)))?;
+
+    std::fs::write(&path, json)
+        .map_err(|e| AppError::Internal(format!("Failed to write file: {}", e)))?;
+
+    Ok(count)
+}
+
+#[tauri::command]
+pub fn import_jobs_from_backup(path: String, db: State<DbState>) -> Result<ImportBackupResult, AppError> {
+    let data = std::fs::read_to_string(&path)
+        .map_err(|e| AppError::Internal(format!("Failed to read file: {}", e)))?;
+
+    let export: ExportData = serde_json::from_str(&data)
+        .map_err(|e| AppError::Internal(format!("Invalid backup file: {}", e)))?;
+
+    let conn = db.0.lock().map_err(|e| AppError::Internal(e.to_string()))?;
+
+    let mut imported = 0;
+    let mut skipped = 0;
+
+    for job in &export.jobs {
+        // Skip if a job with same command already exists
+        let exists: bool = conn
+            .query_row(
+                "SELECT COUNT(*) > 0 FROM jobs WHERE command = ?1",
+                [&job.command],
+                |row| row.get(0),
+            )
+            .unwrap_or(false);
+
+        if exists {
+            skipped += 1;
+            continue;
+        }
+
+        let tags_json = serde_json::to_string(&job.tags).unwrap_or_else(|_| "[]".to_string());
+        conn.execute(
+            "INSERT INTO jobs (name, cron_expression, command, description, is_enabled, tags)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
+            rusqlite::params![
+                job.name,
+                job.cron_expression,
+                job.command,
+                job.description,
+                job.is_enabled,
+                tags_json,
+            ],
+        )?;
+        imported += 1;
+    }
+
+    if imported > 0 {
+        sync_to_crontab(&conn)?;
+    }
+
+    Ok(ImportBackupResult { imported, skipped })
 }

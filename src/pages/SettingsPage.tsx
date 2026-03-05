@@ -1,22 +1,28 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useAppStore } from "@/store/appStore";
-import { Sun, Moon, Monitor, Heart, RefreshCw, Download } from "lucide-react";
+import { Sun, Moon, Monitor, Heart, RefreshCw, Download, Upload, FolderDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { DonationDialog } from "@/components/DonationDialog";
 import { check } from "@tauri-apps/plugin-updater";
 import { relaunch } from "@tauri-apps/plugin-process";
 import { toast } from "sonner";
+import { jobsApi } from "@/api/jobs";
+import { save, open as openFile } from "@tauri-apps/plugin-dialog";
+import { useQueryClient } from "@tanstack/react-query";
 
 export function SettingsPage() {
   const { t, i18n } = useTranslation();
   const { theme, setTheme, updateAvailable, setUpdateAvailable } = useAppStore();
+  const queryClient = useQueryClient();
 
   const isZh = i18n.language?.startsWith("zh");
   const [donationOpen, setDonationOpen] = useState(false);
   const [checking, setChecking] = useState(false);
   const [downloading, setDownloading] = useState(false);
   const [downloadProgress, setDownloadProgress] = useState(0);
+  const [exporting, setExporting] = useState(false);
+  const [importing, setImporting] = useState(false);
 
   const themeOptions = [
     { value: "light" as const, label: isZh ? "浅色" : "Light", icon: Sun },
@@ -69,6 +75,48 @@ export function SettingsPage() {
       toast.error(String(e));
     } finally {
       setDownloading(false);
+    }
+  };
+
+  const handleExport = async () => {
+    try {
+      setExporting(true);
+      const filePath = await save({
+        title: isZh ? "导出任务" : "Export Jobs",
+        defaultPath: `cronpilot-backup-${new Date().toISOString().slice(0, 10)}.json`,
+        filters: [{ name: "JSON", extensions: ["json"] }],
+      });
+      if (!filePath) return;
+      const count = await jobsApi.exportJobsToFile(filePath);
+      toast.success(isZh ? `已导出 ${count} 个任务` : `Exported ${count} job(s)`);
+    } catch (e) {
+      toast.error(String(e));
+    } finally {
+      setExporting(false);
+    }
+  };
+
+  const handleImportBackup = async () => {
+    try {
+      setImporting(true);
+      const filePath = await openFile({
+        title: isZh ? "导入备份" : "Import Backup",
+        multiple: false,
+        filters: [{ name: "JSON", extensions: ["json"] }],
+      });
+      if (!filePath) return;
+      const result = await jobsApi.importJobsFromBackup(String(filePath));
+      queryClient.invalidateQueries({ queryKey: ["jobs"] });
+      queryClient.invalidateQueries({ queryKey: ["dashboardStats"] });
+      toast.success(
+        isZh
+          ? `已导入 ${result.imported} 个任务${result.skipped > 0 ? `，跳过 ${result.skipped} 个已存在` : ""}`
+          : `Imported ${result.imported} job(s)${result.skipped > 0 ? `, skipped ${result.skipped} existing` : ""}`
+      );
+    } catch (e) {
+      toast.error(String(e));
+    } finally {
+      setImporting(false);
     }
   };
 
@@ -126,6 +174,44 @@ export function SettingsPage() {
                 </button>
               );
             })}
+          </div>
+        </div>
+      </div>
+
+      {/* Backup & Restore */}
+      <div className="rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--card))]">
+        <div className="flex items-center justify-between px-4 py-2.5">
+          <div>
+            <span className="text-[14px] font-medium">{isZh ? "备份与恢复" : "Backup & Restore"}</span>
+            <p className="mt-0.5 text-[13px] text-[hsl(var(--muted-foreground))]">
+              {isZh ? "导出或导入任务配置 (JSON)" : "Export or import job configurations (JSON)"}
+            </p>
+          </div>
+          <div className="flex gap-1.5">
+            <button
+              onClick={handleImportBackup}
+              disabled={importing}
+              className="focus-ring cursor-pointer inline-flex items-center gap-1.5 rounded bg-[hsl(var(--secondary))] px-2.5 py-1 text-[13px] font-medium text-[hsl(var(--muted-foreground))] transition-colors hover:text-[hsl(var(--foreground))] disabled:opacity-50"
+            >
+              {importing ? (
+                <div className="h-3 w-3 animate-spin rounded-full border-[1.5px] border-current border-t-transparent" />
+              ) : (
+                <Upload className="h-3 w-3" />
+              )}
+              {isZh ? "导入" : "Import"}
+            </button>
+            <button
+              onClick={handleExport}
+              disabled={exporting}
+              className="focus-ring cursor-pointer inline-flex items-center gap-1.5 rounded bg-[hsl(var(--secondary))] px-2.5 py-1 text-[13px] font-medium text-[hsl(var(--muted-foreground))] transition-colors hover:text-[hsl(var(--foreground))] disabled:opacity-50"
+            >
+              {exporting ? (
+                <div className="h-3 w-3 animate-spin rounded-full border-[1.5px] border-current border-t-transparent" />
+              ) : (
+                <FolderDown className="h-3 w-3" />
+              )}
+              {isZh ? "导出" : "Export"}
+            </button>
           </div>
         </div>
       </div>

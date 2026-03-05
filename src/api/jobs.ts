@@ -20,4 +20,7 @@ export const jobsApi = {
     invoke<{ imported: number; skipped: number }>("import_from_crontab"),
   validateCommand: (command: string) =>
     invoke<CommandValidation>("validate_command", { command }),
+  exportJobsToFile: (path: string) => invoke<number>("export_jobs_to_file", { path }),
+  importJobsFromBackup: (path: string) =>
+    invoke<{ imported: number; skipped: number }>("import_jobs_from_backup", { path }),
 };

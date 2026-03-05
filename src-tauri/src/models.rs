@@ -12,6 +12,8 @@ pub struct Job {
     pub tags: Vec<String>,
     pub created_at: String,
     pub updated_at: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub next_run: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -63,11 +65,18 @@ pub struct JobStats {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct NextRunInfo {
+    pub job_name: String,
+    pub datetime: String,
+    pub relative: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct DashboardStats {
     pub total_jobs: i64,
     pub active_jobs: i64,
     pub failed_recent: i64,
-    pub next_run: Option<String>,
+    pub next_run: Option<NextRunInfo>,
 }
 
 fn default_true() -> bool {

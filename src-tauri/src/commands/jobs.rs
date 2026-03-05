@@ -106,28 +106,46 @@ pub fn validate_command(command: String) -> Result<CommandValidation, AppError> 
 
 #[tauri::command]
 pub fn list_jobs(db: State<DbState>) -> Result<Vec<Job>, AppError> {
+    use chrono::{Local, Utc};
+    use croner::Cron;
+
     let conn = db.0.lock().map_err(|e| AppError::Internal(e.to_string()))?;
     let mut stmt = conn.prepare(
         "SELECT id, name, cron_expression, command, description, is_enabled, is_synced, tags, created_at, updated_at
          FROM jobs ORDER BY created_at DESC"
     )?;
 
+    let now = Utc::now();
     let jobs = stmt
         .query_map([], |row| {
             let tags_str: String = row.get(7)?;
             let tags: Vec<String> =
                 serde_json::from_str(&tags_str).unwrap_or_default();
+            let is_enabled: bool = row.get(5)?;
+            let cron_expression: String = row.get(2)?;
+
+            let next_run = if is_enabled {
+                Cron::new(&cron_expression)
+                    .parse()
+                    .ok()
+                    .and_then(|cron| cron.iter_from(now).next())
+                    .map(|next| next.with_timezone(&Local).format("%m-%d %H:%M").to_string())
+            } else {
+                None
+            };
+
             Ok(Job {
                 id: row.get(0)?,
                 name: row.get(1)?,
-                cron_expression: row.get(2)?,
+                cron_expression,
                 command: row.get(3)?,
                 description: row.get(4)?,
-                is_enabled: row.get(5)?,
+                is_enabled,
                 is_synced: row.get(6)?,
                 tags,
                 created_at: row.get(8)?,
                 updated_at: row.get(9)?,
+                next_run,
             })
         })?
         .collect::<Result<Vec<_>, _>>()?;
@@ -177,6 +195,7 @@ pub fn create_job(job: CreateJobRequest, db: State<DbState>) -> Result<Job, AppE
             tags,
             created_at: row.get(8)?,
             updated_at: row.get(9)?,
+            next_run: None,
         })
     })?;
 
@@ -259,6 +278,7 @@ pub fn update_job(id: i64, job: UpdateJobRequest, db: State<DbState>) -> Result<
             tags,
             created_at: row.get(8)?,
             updated_at: row.get(9)?,
+            next_run: None,
         })
     })?;
 
@@ -314,6 +334,7 @@ pub fn toggle_job(id: i64, db: State<DbState>) -> Result<Job, AppError> {
             tags,
             created_at: row.get(8)?,
             updated_at: row.get(9)?,
+            next_run: None,
         })
     })?;
 
@@ -343,6 +364,7 @@ pub fn get_job(id: i64, db: State<DbState>) -> Result<Job, AppError> {
             tags,
             created_at: row.get(8)?,
             updated_at: row.get(9)?,
+            next_run: None,
         })
     }).map_err(|_| AppError::NotFound(format!("Job {} not found", id)))?;
 

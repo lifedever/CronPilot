@@ -30,7 +30,8 @@ const BTN_SECONDARY = `${BTN_BASE} border-[hsl(var(--border))] bg-[hsl(var(--car
 
 export function JobsPage() {
   const { t } = useTranslation("jobs");
-  const { t: tc } = useTranslation();
+  const { t: tc, i18n } = useTranslation();
+  const isZh = i18n.language?.startsWith("zh");
   const { data: jobs, isLoading } = useJobs();
   const deleteJob = useDeleteJob();
   const toggleJob = useToggleJob();
@@ -276,9 +277,16 @@ export function JobsPage() {
                       {job.cron_expression}
                     </code>
                   </div>
-                  <div className="mt-0.5 flex items-center gap-1.5 text-[13px] text-[hsl(var(--muted-foreground))]">
-                    <Terminal className="h-[10px] w-[10px]" />
-                    <span className="max-w-[400px] truncate font-mono">{job.command}</span>
+                  <div className="mt-0.5 flex items-center gap-3 text-[13px] text-[hsl(var(--muted-foreground))]">
+                    <span className="flex min-w-0 flex-1 items-center gap-1.5">
+                      <Terminal className="h-[10px] w-[10px] shrink-0" />
+                      <span className="truncate font-mono">{job.command}</span>
+                    </span>
+                    {job.next_run && (
+                      <span className="shrink-0 text-[12px] text-[hsl(var(--muted-foreground))]">
+                        {isZh ? `将于 ${job.next_run} 执行` : `runs at ${job.next_run}`}
+                      </span>
+                    )}
                   </div>
                 </div>
 

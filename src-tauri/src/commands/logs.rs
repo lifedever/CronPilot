@@ -3,7 +3,7 @@ use tauri::State;
 
 use crate::db::DbState;
 use crate::error::AppError;
-use crate::models::{DashboardStats, ExecutionLog, JobStats};
+use crate::models::{DashboardStats, ExecutionLog, JobStats, NextRunInfo};
 use crate::runner;
 
 #[derive(Serialize)]
@@ -165,7 +165,7 @@ pub fn get_job_stats(job_id: i64, db: State<DbState>) -> Result<JobStats, AppErr
 pub fn get_dashboard_stats(db: State<DbState>) -> Result<DashboardStats, AppError> {
     let conn = db.0.lock().map_err(|e| AppError::Internal(e.to_string()))?;
 
-    let stats = conn.query_row(
+    let (total_jobs, active_jobs, failed_recent) = conn.query_row(
         "SELECT
             (SELECT COUNT(*) FROM jobs) as total_jobs,
             (SELECT COUNT(*) FROM jobs WHERE is_enabled = 1) as active_jobs,
@@ -173,17 +173,72 @@ pub fn get_dashboard_stats(db: State<DbState>) -> Result<DashboardStats, AppErro
              WHERE status = 'failed' AND started_at >= datetime('now', '-24 hours')) as failed_recent
         ",
         [],
-        |row| {
-            Ok(DashboardStats {
-                total_jobs: row.get(0)?,
-                active_jobs: row.get(1)?,
-                failed_recent: row.get(2)?,
-                next_run: None,
-            })
-        },
+        |row| Ok((row.get::<_, i64>(0)?, row.get::<_, i64>(1)?, row.get::<_, i64>(2)?)),
     )?;
 
-    Ok(stats)
+    // Compute next upcoming run across all enabled jobs
+    let next_run = compute_next_run(&conn);
+
+    Ok(DashboardStats {
+        total_jobs,
+        active_jobs,
+        failed_recent,
+        next_run,
+    })
+}
+
+fn compute_next_run(conn: &rusqlite::Connection) -> Option<NextRunInfo> {
+    use chrono::{Local, Utc};
+    use croner::Cron;
+
+    let mut stmt = conn
+        .prepare("SELECT name, cron_expression FROM jobs WHERE is_enabled = 1")
+        .ok()?;
+
+    let jobs: Vec<(String, String)> = stmt
+        .query_map([], |row| Ok((row.get::<_, String>(0)?, row.get::<_, String>(1)?)))
+        .ok()?
+        .filter_map(|r| r.ok())
+        .collect();
+
+    let now = Utc::now();
+    let mut earliest: Option<(String, chrono::DateTime<Utc>)> = None;
+
+    for (name, expr) in &jobs {
+        if let Ok(cron) = Cron::new(expr).parse() {
+            if let Some(next) = cron.iter_from(now).next() {
+                match &earliest {
+                    None => earliest = Some((name.clone(), next)),
+                    Some((_, t)) if next < *t => earliest = Some((name.clone(), next)),
+                    _ => {}
+                }
+            }
+        }
+    }
+
+    earliest.map(|(job_name, next_time)| {
+        let duration = next_time - now;
+        let secs = duration.num_seconds();
+        let relative = if secs < 60 {
+            format!("{}s", secs)
+        } else if secs < 3600 {
+            format!("{}m", secs / 60)
+        } else if secs < 86400 {
+            let h = secs / 3600;
+            let m = (secs % 3600) / 60;
+            if m > 0 { format!("{}h{}m", h, m) } else { format!("{}h", h) }
+        } else {
+            let d = secs / 86400;
+            let h = (secs % 86400) / 3600;
+            if h > 0 { format!("{}d{}h", d, h) } else { format!("{}d", d) }
+        };
+        let local_time = next_time.with_timezone(&Local);
+        NextRunInfo {
+            job_name,
+            datetime: local_time.format("%Y-%m-%d %H:%M:%S").to_string(),
+            relative,
+        }
+    })
 }
 
 #[tauri::command]

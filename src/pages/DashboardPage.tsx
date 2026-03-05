@@ -15,6 +15,7 @@ import {
   ChevronsDown,
   Hand,
   Timer,
+  FastForward,
 } from "lucide-react";
 import { cn, parseUTCDate, formatLocalTime } from "@/lib/utils";
 import { RunLogDialog } from "@/components/jobs/RunLogDialog";
@@ -152,7 +153,7 @@ export function DashboardPage() {
   return (
     <div className="flex h-full min-h-0 flex-col gap-4">
       {/* Stats - fixed height */}
-      <div className="shrink-0 grid grid-cols-3 gap-3">
+      <div className="shrink-0 grid grid-cols-4 gap-3">
         {cards.map((card) => (
           <div
             key={card.label}
@@ -169,6 +170,33 @@ export function DashboardPage() {
             </p>
           </div>
         ))}
+        {/* Next Run card */}
+        <div className="rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--card))] px-4 py-3">
+          <div className="flex items-center justify-between">
+            <p className="text-[14px] text-[hsl(var(--muted-foreground))]">
+              {isZh ? "即将执行" : "Next Run"}
+            </p>
+            <FastForward className="h-[14px] w-[14px] text-violet-600 dark:text-violet-400" />
+          </div>
+          {stats?.next_run ? (
+            <div className="mt-1">
+              <p
+                className="truncate text-[15px] font-semibold"
+                title={stats.next_run.job_name}
+              >
+                {stats.next_run.job_name}
+              </p>
+              <p
+                className="text-[12px] tabular-nums text-[hsl(var(--muted-foreground))]"
+                title={stats.next_run.datetime}
+              >
+                {stats.next_run.relative}
+              </p>
+            </div>
+          ) : (
+            <p className="mt-1 text-[24px] font-semibold tabular-nums">—</p>
+          )}
+        </div>
       </div>
 
       {/* Recent Activity - fills remaining height, scrolls internally */}

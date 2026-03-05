@@ -23,10 +23,11 @@ pub fn run() {
             let app_data_dir = app
                 .path()
                 .app_data_dir()
-                .expect("Failed to get app data directory");
+                .map_err(|e| format!("Failed to get app data directory: {}", e))?;
 
             let db_path = db::get_db_path(&app_data_dir);
-            let conn = db::init_db(&db_path).expect("Failed to initialize database");
+            let conn = db::init_db(&db_path)
+                .map_err(|e| format!("Failed to initialize database: {}", e))?;
 
             // Install/update the cron runner script
             if let Err(e) = runner::install_runner(&db_path) {
@@ -74,7 +75,10 @@ pub fn run() {
 
             app.manage(DbState(std::sync::Mutex::new(conn)));
 
-            menu::setup_menu(app)?;
+            // Menu setup is non-fatal — app can still work without custom menus
+            if let Err(e) = menu::setup_menu(app) {
+                eprintln!("Warning: failed to setup menu: {}", e);
+            }
 
             // Emit first-run event after window is ready
             if is_first_run {
@@ -119,5 +123,7 @@ pub fn run() {
             commands::settings::mark_first_run_done,
         ])
         .run(tauri::generate_context!())
-        .expect("error while running tauri application");
+        .unwrap_or_else(|e| {
+            eprintln!("CronPilot failed to start: {}", e);
+        });
 }

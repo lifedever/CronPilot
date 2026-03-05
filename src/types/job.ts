@@ -9,6 +9,7 @@ export interface Job {
   tags: string[];
   created_at: string;
   updated_at: string;
+  next_run?: string;
 }
 
 export interface CreateJobRequest {
@@ -63,9 +64,15 @@ export interface JobStats {
   last_status: string | null;
 }
 
+export interface NextRunInfo {
+  job_name: string;
+  datetime: string;
+  relative: string;
+}
+
 export interface DashboardStats {
   total_jobs: number;
   active_jobs: number;
   failed_recent: number;
-  next_run: string | null;
+  next_run: NextRunInfo | null;
 }

@@ -1,5 +1,5 @@
 use croner::Cron;
-use chrono::{Local, Utc};
+use chrono::Local;
 use serde::Serialize;
 
 use crate::error::AppError;
@@ -39,15 +39,14 @@ pub fn get_next_runs(expr: String, count: u32) -> Result<Vec<NextRun>, AppError>
         .parse()
         .map_err(|e| AppError::CronExpression(e.to_string()))?;
 
-    let now = Utc::now();
+    let now = Local::now();
     let mut runs = Vec::new();
 
     for next in cron.iter_from(now).take(count as usize) {
         let duration = next - now;
         let relative = format_relative_time(duration);
-        let local_time = next.with_timezone(&Local);
         runs.push(NextRun {
-            datetime: local_time.format("%Y-%m-%d %H:%M:%S").to_string(),
+            datetime: next.format("%Y-%m-%d %H:%M:%S").to_string(),
             relative,
         });
     }

@@ -19,11 +19,10 @@ interface JobFormDialogProps {
 
 const PRESETS = [
   { label: "everyMinute", value: "* * * * *" },
-  { label: "every5Minutes", value: "*/5 * * * *" },
   { label: "every15Minutes", value: "*/15 * * * *" },
-  { label: "every30Minutes", value: "*/30 * * * *" },
   { label: "hourly", value: "0 * * * *" },
   { label: "every6Hours", value: "0 */6 * * *" },
+  { label: "dailyAt10", value: "0 10 * * *" },
   { label: "daily", value: "0 0 * * *" },
   { label: "weekly", value: "0 0 * * 1" },
   { label: "monthly", value: "0 0 1 * *" },

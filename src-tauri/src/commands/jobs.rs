@@ -106,7 +106,7 @@ pub fn validate_command(command: String) -> Result<CommandValidation, AppError> 
 
 #[tauri::command]
 pub fn list_jobs(db: State<DbState>) -> Result<Vec<Job>, AppError> {
-    use chrono::{Local, Utc};
+    use chrono::Local;
     use croner::Cron;
 
     let conn = db.0.lock().map_err(|e| AppError::Internal(e.to_string()))?;
@@ -115,7 +115,7 @@ pub fn list_jobs(db: State<DbState>) -> Result<Vec<Job>, AppError> {
          FROM jobs ORDER BY created_at DESC"
     )?;
 
-    let now = Utc::now();
+    let now = Local::now();
     let jobs = stmt
         .query_map([], |row| {
             let tags_str: String = row.get(7)?;
@@ -129,7 +129,7 @@ pub fn list_jobs(db: State<DbState>) -> Result<Vec<Job>, AppError> {
                     .parse()
                     .ok()
                     .and_then(|cron| cron.iter_from(now).next())
-                    .map(|next| next.with_timezone(&Local).format("%m-%d %H:%M").to_string())
+                    .map(|next| next.format("%m-%d %H:%M").to_string())
             } else {
                 None
             };

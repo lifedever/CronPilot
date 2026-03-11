@@ -27,11 +27,10 @@
   },
   "presets": {
     "everyMinute": "每分钟",
-    "every5Minutes": "每 5 分钟",
     "every15Minutes": "每 15 分钟",
-    "every30Minutes": "每 30 分钟",
     "hourly": "每小时",
     "every6Hours": "每 6 小时",
+    "dailyAt10": "每天 10 点",
     "daily": "每天午夜",
     "weekly": "每周一",
     "monthly": "每月 1 日"

@@ -1,6 +1,22 @@
-# CronPilot
+<h1 align="center">CronPilot</h1>
 
-本地 crontab 可视化管理桌面工具。告别手动编辑 crontab，用图形界面轻松管理定时任务。
+<p align="center">
+  <strong>本地 crontab 可视化管理桌面工具</strong><br>
+  告别手动编辑 crontab，用图形界面轻松管理定时任务
+</p>
+
+<p align="center">
+  <a href="https://github.com/lifedever/CronPilot/releases/latest">
+    <img src="https://img.shields.io/github/v/release/lifedever/CronPilot?style=flat-square&color=34D399&label=Latest%20Release" alt="Latest Release">
+  </a>
+  <a href="https://github.com/lifedever/CronPilot/releases">
+    <img src="https://img.shields.io/github/downloads/lifedever/CronPilot/total?style=flat-square&color=7C3AED&label=Downloads" alt="Downloads">
+  </a>
+  <img src="https://img.shields.io/badge/platform-macOS-blue?style=flat-square" alt="Platform">
+  <a href="https://github.com/lifedever/CronPilot/blob/main/LICENSE">
+    <img src="https://img.shields.io/github/license/lifedever/CronPilot?style=flat-square" alt="License">
+  </a>
+</p>
 
 ## 截图
 
@@ -60,10 +76,6 @@ src/          # React 前端
 src-tauri/    # Rust 后端 (Tauri)
 ```
 
-## 捐助
+## 捐赠支持
 
-如果 CronPilot 对你有帮助，欢迎请我喝杯咖啡 ☕
-
-| 支付宝 | 微信支付 |
-|:---:|:---:|
-| <img src="public/alipay.PNG" width="200" /> | <img src="public/wechatpay.JPG" width="200" /> |
+如果 CronPilot 对你有帮助，欢迎[捐赠支持](https://lifedever.github.io/sponsor/)开发者持续维护。

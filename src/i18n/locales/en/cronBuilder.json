@@ -27,11 +27,10 @@
   },
   "presets": {
     "everyMinute": "Every minute",
-    "every5Minutes": "Every 5 minutes",
     "every15Minutes": "Every 15 minutes",
-    "every30Minutes": "Every 30 minutes",
     "hourly": "Hourly",
     "every6Hours": "Every 6 hours",
+    "dailyAt10": "Daily at 10:00",
     "daily": "Daily at midnight",
     "weekly": "Weekly on Monday",
     "monthly": "Monthly on the 1st"

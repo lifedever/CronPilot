@@ -188,7 +188,7 @@ pub fn get_dashboard_stats(db: State<DbState>) -> Result<DashboardStats, AppErro
 }
 
 fn compute_next_run(conn: &rusqlite::Connection) -> Option<NextRunInfo> {
-    use chrono::{Local, Utc};
+    use chrono::Local;
     use croner::Cron;
 
     let mut stmt = conn
@@ -201,8 +201,8 @@ fn compute_next_run(conn: &rusqlite::Connection) -> Option<NextRunInfo> {
         .filter_map(|r| r.ok())
         .collect();
 
-    let now = Utc::now();
-    let mut earliest: Option<(String, chrono::DateTime<Utc>)> = None;
+    let now = Local::now();
+    let mut earliest: Option<(String, chrono::DateTime<Local>)> = None;
 
     for (name, expr) in &jobs {
         if let Ok(cron) = Cron::new(expr).parse() {
@@ -232,10 +232,9 @@ fn compute_next_run(conn: &rusqlite::Connection) -> Option<NextRunInfo> {
             let h = (secs % 86400) / 3600;
             if h > 0 { format!("{}d{}h", d, h) } else { format!("{}d", d) }
         };
-        let local_time = next_time.with_timezone(&Local);
         NextRunInfo {
             job_name,
-            datetime: local_time.format("%Y-%m-%d %H:%M:%S").to_string(),
+            datetime: next_time.format("%Y-%m-%d %H:%M:%S").to_string(),
             relative,
         }
     })
